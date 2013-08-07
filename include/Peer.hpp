@@ -14,10 +14,11 @@ using boost::asio::ip::tcp;
 class Peer
 {
 public:
+  typedef PeerState State;
 
   Peer(shared_ptr<tcp::socket> _socket);
 
-  void set_state(PeerState new_state);
+  void set_state(State new_state);
 
   void start_listening();
 
@@ -51,7 +52,7 @@ private:
   string id;
   shared_ptr<tcp::socket> socket;
   char last_message[MESSAGE_SIZE];
-  PeerState state;
+  State state;
 };
 
 

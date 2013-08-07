@@ -3,12 +3,13 @@
 #include "Peer.hpp"
 #include "Utils.hpp"
 
+
 Peer::Peer(shared_ptr<tcp::socket> _socket)
   : socket(_socket), state(PEER_STATE_CONNECTING)
 {
 }
 
-void Peer::set_state(PeerState new_state)
+void Peer::set_state(Peer::State new_state)
 {
   state = new_state;
   DEBUG("Peer @" << get_address() << " now has state " << PeerStateNames[state] << ".");

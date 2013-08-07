@@ -6,13 +6,14 @@
 class Message
 {
 public:
-  enum Type {
-    NONE=0,
-    
-  }
+  typedef MessageType Type;
 
+  Message();
+  string serialize();
 
-}
+protected:
+  Type type;
+};
 
 
 #endif
