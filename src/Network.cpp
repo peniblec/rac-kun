@@ -1,4 +1,5 @@
 #include "Network.hpp"
+#include "Utils.hpp"
 
 Network::Network(shared_ptr<asio::io_service> _ios,
                  shared_ptr<tcp::resolver> _resolver,
@@ -16,7 +17,7 @@ void Network::add_peer(shared_ptr<Peer> p)
 
 void Network::add(string peer_name)
 {
-  tcp::resolver::query query(peer_name, "1337");
+  tcp::resolver::query query(peer_name, itos(RAC_PORT));
   tcp::resolver::iterator endpoint_iterator = resolver->resolve(query);
 
   shared_ptr<tcp::socket> socket(new tcp::socket(*io_service));

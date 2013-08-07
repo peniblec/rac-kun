@@ -3,26 +3,21 @@
 
 #include <boost/asio.hpp>
 #include <boost/shared_ptr.hpp>
-#include <string>
 
 #include "Config.hpp"
 
 using namespace boost;
 using boost::asio::ip::tcp;
 
+
+  
 class Peer
 {
 public:
 
-  enum State {
-    CONNECTING = 0,
-    ALIVE,
-    DEAD
-  };
-
   Peer(shared_ptr<tcp::socket> _socket);
 
-  void set_state(State new_state);
+  void set_state(PeerState new_state);
 
   void start_listening();
 
@@ -48,7 +43,7 @@ public:
   void finish_write();
 
   bool is_alive() {
-    return (state!=DEAD);
+    return (state!=PEER_STATE_DEAD);
   }
 
 
@@ -56,7 +51,7 @@ private:
   string id;
   shared_ptr<tcp::socket> socket;
   char last_message[MESSAGE_SIZE];
-  State state;
+  PeerState state;
 };
 
 

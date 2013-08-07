@@ -1,4 +1,8 @@
+#include <sstream>
+
 #include "Utils.hpp"
+
+
 
 void parse_input(string& input, string& command, string& argument) {
 
@@ -14,4 +18,11 @@ void parse_input(string& input, string& command, string& argument) {
   l = input.copy(buf, input.size() - space, space+1);
   buf[l] = '\0';
   argument=string(buf);
+}
+
+string itos(int i) {
+  stringstream ss;
+  ss << i;
+  string ret = ss.str();
+  return ret;
 }

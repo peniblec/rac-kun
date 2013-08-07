@@ -1,22 +1,22 @@
 #include <boost/bind.hpp>
 
 #include "Peer.hpp"
-
+#include "Utils.hpp"
 
 Peer::Peer(shared_ptr<tcp::socket> _socket)
-  : socket(_socket), state(CONNECTING)
+  : socket(_socket), state(PEER_STATE_CONNECTING)
 {
 }
 
-void Peer::set_state(State new_state)
+void Peer::set_state(PeerState new_state)
 {
   state = new_state;
-  DEBUG("Peer @" << get_address() << " now has state " << state << ".");
+  DEBUG("Peer @" << get_address() << " now has state " << PeerStateNames[state] << ".");
 }
 
 void Peer::start_listening()
 {
-  set_state(ALIVE);
+  set_state(PEER_STATE_ALIVE);
   listen();
 }
 
@@ -33,7 +33,7 @@ void Peer::handle_incoming_message(const system::error_code& error)
 {
   if (error == asio::error::eof) {
     DEBUG("Peer @" << get_address() << " disconnected.");
-    set_state(DEAD);
+    set_state(PEER_STATE_DEAD);
   }
   else {
     cout << "- " << get_address() << ": " << get_last_message() << endl;
@@ -51,3 +51,4 @@ void Peer::finish_write()
 {
   
 }
+

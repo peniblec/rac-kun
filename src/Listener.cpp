@@ -1,9 +1,11 @@
 #include <boost/bind.hpp>
 
 #include "Listener.hpp"
+#include "Utils.hpp"
+
 
 Listener::Listener(shared_ptr<asio::io_service> io_service, shared_ptr<Network> _network)
-  : acceptor(*io_service, tcp::endpoint(tcp::v4(), 1337)),
+  : acceptor(*io_service, tcp::endpoint(tcp::v4(), RAC_PORT)),
     network(_network)
 {
   start_accept();
