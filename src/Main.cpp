@@ -20,7 +20,7 @@ int main() {
   shared_ptr<tcp::resolver> resolver(new tcp::resolver(*io_service));
 
 
-  Local_Peer local_peer;
+  LocalPeer local_peer;
   shared_ptr<Network> network(new Network(io_service, resolver, local_peer));
   Listener listener(io_service, network);
 

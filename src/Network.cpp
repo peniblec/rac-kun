@@ -3,7 +3,7 @@
 
 Network::Network(shared_ptr<asio::io_service> _ios,
                  shared_ptr<tcp::resolver> _resolver,
-                 Local_Peer& p)
+                 LocalPeer& p)
   : io_service(_ios), resolver(_resolver), local_peer(p)
 {
 

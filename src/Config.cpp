@@ -7,7 +7,14 @@ const char* PeerStateNames[PEER_STATE_END] =
     "Dead"
   };
 
-const char* MessageTypeNames[MESSAGE_TYPE__END] =
+const char* LocalStateNames[LOCAL_STATE_END] =
+  {
+    "Alone",
+    "Joining",
+    "Connected"
+  };
+
+const char* MessageTypeNames[MESSAGE_TYPE_END] =
   {
     "None",
     "Join Request",

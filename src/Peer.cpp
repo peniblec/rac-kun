@@ -44,8 +44,9 @@ void Peer::handle_incoming_message(const system::error_code& error)
 
 void Peer::send(string message)
 {
-  asio::async_write(*socket, asio::buffer(message),
-                    bind(&Peer::finish_write, this));
+  // TODO: limit buffer size to MESSAGE_SIZE, loop until whole is sent
+  socket->async_write_some(asio::buffer(message),
+                           bind(&Peer::finish_write, this));
 }
 
 void Peer::finish_write()
