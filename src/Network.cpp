@@ -1,3 +1,5 @@
+#include <boost/bind.hpp>
+
 #include "Network.hpp"
 #include "Utils.hpp"
 
@@ -11,8 +13,12 @@ Network::Network(shared_ptr<asio::io_service> _ios,
 
 void Network::add_peer(shared_ptr<Peer> p)
 {
-  peers.push_back(p);
-  p->start_listening();
+  peers[ p->get_address() ] = p;
+  // NB: decide whether PeerMap should have ID or IP as key
+  // or whether to have a JoiningMap with IP and a ConnectedMap with ID
+  Peer::Handler listen_handler = bind(&Network::handle_incoming_message, this,
+                                      asio::placeholders::error, p.get());
+  p->start_listening(listen_handler);
 }
 
 void Network::add(string peer_name)
@@ -29,22 +35,38 @@ void Network::add(string peer_name)
 
 void Network::send_all(string message)
 {
-  check_peers();
+  // check_peers();
   DEBUG("Sending \"" << message << "\" to " << peers.size() << " peers.");
 
-  for (uint p=0 ; p<peers.size() ; p++) {
+  PeerMap::iterator it;
+  for (it=peers.begin(); it!=peers.end(); it++) {
 
-    peers[p]->send(message);
+    it->second->send(message);
   }
 }
 
-void Network::check_peers()
+void Network::handle_incoming_message(const system::error_code& error,
+                                      Peer* emitter)
 {
-  for (uint p=0 ; p<peers.size() ; p++) {
-
-    while (peers.size() > p  && ! peers[p]->is_alive() ) {
-      peers.erase( peers.begin()+p );
-      DEBUG("Removed peer, " << peers.size() << " remaining.");
-    }
+  if (error == asio::error::eof) {
+    DEBUG("Peer @" << emitter->get_address() << " disconnected.");
+    peers.erase( emitter->get_id() );
   }
+  else if (error) {
+    DEBUG("Network::handle_incoming_message: " << error.message());
+  }
+  else {
+    emitter->receive();
+  }  
 }
+
+// void Network::check_peers()
+// {
+//   for (uint p=0 ; p<peers.size() ; p++) {
+
+//     while (peers.size() > p  && ! peers[p]->is_alive() ) {
+//       peers.erase( peers.begin()+p );
+//       DEBUG("Removed peer, " << peers.size() << " remaining.");
+//     }
+//   }
+// }

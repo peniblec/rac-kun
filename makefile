@@ -11,7 +11,7 @@ LIBS_INC=/usr/include
 INCLUDE=-I$(INC) -I$(LIBS_INC)
 
 
-OBJ=Main.o Config.o Listener.o Peer.o Network.o Utils.o
+OBJ=Main.o Config.o Listener.o LocalPeer.o Peer.o Network.o Utils.o
 EXE=node
 
 
@@ -21,6 +21,7 @@ $(EXE): $(OBJ)
 Main.o : $(SRC)/Main.cpp $(INC)/Config.hpp
 Config.o : $(SRC)/Config.cpp $(INC)/Config.hpp
 Listener.o : $(SRC)/Listener.cpp $(INC)/Listener.hpp $(INC)/Config.hpp
+LocalPeer.o : $(SRC)/LocalPeer.cpp $(INC)/LocalPeer.hpp $(INC)/Config.hpp
 Network.o : $(SRC)/Network.cpp $(INC)/Network.hpp $(INC)/Config.hpp
 Peer.o : $(SRC)/Peer.cpp $(INC)/Peer.hpp $(INC)/Config.hpp
 Utils.o : $(SRC)/Utils.cpp $(INC)/Utils.hpp $(INC)/Config.hpp

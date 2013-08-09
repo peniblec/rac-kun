@@ -24,7 +24,6 @@ int main() {
   shared_ptr<Network> network(new Network(io_service, resolver, local_peer));
   Listener listener(io_service, network);
 
-  
   thread io_service_thread(bind(&asio::io_service::run, io_service));
 
   cout << "What to do?" << endl
@@ -33,6 +32,22 @@ int main() {
 
   for(;;) {
 
+    // LocalPeer::State state = local_peer.get_state();
+
+    // switch (state) {
+      
+    // case LOCAL_STATE_ALONE:
+    //   // ask for entry point
+    //   break;
+    // case LOCAL_STATE_JOINING:
+    // case LOCAL_STATE_READYING:
+    //   // nothing, wait for procedure to finish (handled by Network)
+    //   break;
+    // case LOCAL_STATE_CONNECTED:
+
+    //   break;
+    // }
+    
     string input, command, argument;
     getline(cin, input);
     parse_input(input, command, argument);

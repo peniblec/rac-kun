@@ -11,6 +11,8 @@ public:
 
   LocalPeer();
   void set_state(State new_state);
+  State const get_state();
+  void update();
   
 private:
   string id;

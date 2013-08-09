@@ -1,6 +1,7 @@
 #include <boost/bind.hpp>
 
 #include "Peer.hpp"
+#include "Network.hpp"
 #include "Utils.hpp"
 
 
@@ -15,9 +16,11 @@ void Peer::set_state(Peer::State new_state)
   DEBUG("Peer @" << get_address() << " now has state " << PeerStateNames[state] << ".");
 }
 
-void Peer::start_listening()
+void Peer::start_listening(Peer::Handler _listen_handler)
 {
-  set_state(PEER_STATE_ALIVE);
+  listen_handler = _listen_handler;
+  id = get_address();
+  set_state(PEER_STATE_JOINING);
   listen();
 }
 
@@ -26,20 +29,13 @@ void Peer::listen()
   memset(last_message, 0, MESSAGE_SIZE);
     
   socket->async_read_some(asio::buffer(last_message),
-                          bind(&Peer::handle_incoming_message, this,
-                               asio::placeholders::error));
+                          bind(listen_handler, asio::placeholders::error));
 }
 
-void Peer::handle_incoming_message(const system::error_code& error)
+void Peer::receive()
 {
-  if (error == asio::error::eof) {
-    DEBUG("Peer @" << get_address() << " disconnected.");
-    set_state(PEER_STATE_DEAD);
-  }
-  else {
     cout << "- " << get_address() << ": " << get_last_message() << endl;
     listen();
-  }
 }
 
 void Peer::send(string message)
