@@ -1,5 +1,6 @@
 #include <boost/bind.hpp>
 
+#include "Message.hpp"
 #include "Network.hpp"
 #include "Utils.hpp"
 
@@ -56,7 +57,16 @@ void Network::handle_incoming_message(const system::error_code& error,
     DEBUG("Network::handle_incoming_message: " << error.message());
   }
   else {
-    emitter->receive();
+    try {
+      Message* message = parse_message(emitter->get_last_message());
+      DEBUG("yay");
+      message->display();
+    }
+    catch (MessageParseException& e) {
+      DEBUG("Network::handle_incoming_message: " << e.what());
+      DEBUG("Couldn't make sense of this: " << emitter->get_last_message());
+    }
+    emitter->listen();
   }  
 }
 

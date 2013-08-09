@@ -8,8 +8,12 @@
 class JoinMessage : public Message
 {
 public:
-  JoinMessage();
-  JoinMessage(string raw);
+  // JoinMessage();
+  // JoinMessage(string raw);
+  JoinMessage(string _id, string _pub_k);
+  
+  string serialize();
+  void display();
 
 private:
   string id;

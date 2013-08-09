@@ -35,7 +35,7 @@ void Peer::listen()
 void Peer::receive()
 {
     cout << "- " << get_address() << ": " << get_last_message() << endl;
-    listen();
+    // listen();
 }
 
 void Peer::send(string message)

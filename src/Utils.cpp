@@ -1,11 +1,12 @@
 #include <sstream>
 
+#include "Message.hpp"
 #include "Utils.hpp"
 
 
 
-void parse_input(string& input, string& command, string& argument) {
-
+void parse_input(string& input, string& command, string& argument)
+{
   int space = input.find(' ');
   int l;
 
@@ -20,9 +21,32 @@ void parse_input(string& input, string& command, string& argument) {
   argument=string(buf);
 }
 
-string itos(int i) {
+string itos(int i)
+{
   stringstream ss;
   ss << i;
   string ret = ss.str();
   return ret;
+}
+
+Message* parse_message(string msg)
+{
+  Message::Type msg_type = (Message::Type)msg[0];
+
+  DEBUG("Type found: " << msg_type);
+  
+  switch (msg_type) {
+  case MESSAGE_TYPE_JOIN:
+    {
+      string id(msg, JOIN_MSG_ID_OFFSET, JOIN_MSG_ID_LENGTH);
+      string pub_k(msg, JOIN_MSG_KEY_OFFSET, JOIN_MSG_KEY_LENGTH);
+
+      JoinMessage* m = new JoinMessage(id, pub_k);
+    
+      return m;
+    }
+  default:
+    throw MessageParseException();
+  }
+      
 }

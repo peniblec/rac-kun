@@ -6,6 +6,9 @@
 
 #include "Config.hpp"
 
+#include "JoinMessage.hpp"
+#include "Message.hpp"
+
 #ifdef DEBUG_ON
 #define DEBUG(x) do { std::cerr << "DBG: " << x << std::endl; } while (0)
 #else
@@ -15,5 +18,7 @@
 
 void parse_input(string& input, string& command, string& argument);
 string itos(int i);
+
+Message* parse_message(string msg);
 
 #endif
