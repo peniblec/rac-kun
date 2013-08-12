@@ -25,3 +25,11 @@ void LocalPeer::set_state(LocalPeer::State new_state)
 LocalPeer::State const LocalPeer::get_state() {
   return state;
 }
+
+string const LocalPeer::get_id() {
+  return id;
+}
+
+string const LocalPeer::get_pub_key() {
+  return pub_key;
+}

@@ -28,26 +28,11 @@ int main() {
 
   cout << "What to do?" << endl
        << "send <message> - Send <message> to peers" << endl
-       << "add <address> - Add peer with address <address>" << endl;
+       << "add <address> - Add peer with address <address>" << endl
+       << "join <address> - Join a session using <address> as an entry point" << endl;
 
   for(;;) {
 
-    // LocalPeer::State state = local_peer.get_state();
-
-    // switch (state) {
-      
-    // case LOCAL_STATE_ALONE:
-    //   // ask for entry point
-    //   break;
-    // case LOCAL_STATE_JOINING:
-    // case LOCAL_STATE_READYING:
-    //   // nothing, wait for procedure to finish (handled by Network)
-    //   break;
-    // case LOCAL_STATE_CONNECTED:
-
-    //   break;
-    // }
-    
     string input, command, argument;
     getline(cin, input);
     parse_input(input, command, argument);
@@ -59,9 +44,18 @@ int main() {
     }
     else if ( command.compare(COMMAND_ADD)==0 ) {
 
-      network->add(argument);
+      network->connect_peer(argument);
+    }
+    else if ( command.compare(COMMAND_JOIN)==0 ) {
+
+      local_peer.set_state(LOCAL_STATE_JOINING);
+      shared_ptr<Peer> entry_point = network->join(argument);
+
+      JoinMessage* join = new JoinMessage(local_peer.get_id(), local_peer.get_pub_key());
+      entry_point->send(join);
     }
 
+    
   }
 
   return 0;

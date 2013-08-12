@@ -25,6 +25,7 @@ private:
 
   tcp::acceptor acceptor;
   shared_ptr<Network> network;
+  // TODO: remove list (acceptor can only handle 1 socket/time anyway)
   list<Peer*> pending_peers;
 };
 

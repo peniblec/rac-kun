@@ -11,12 +11,13 @@ using namespace std;
 
 const string COMMAND_SEND = "send";
 const string COMMAND_ADD = "add";
+const string COMMAND_JOIN = "join";
 
 enum PeerState {
-  PEER_STATE_CONNECTING = 0,
+  PEER_STATE_NEW = 0,
   PEER_STATE_JOINING,
+  PEER_STATE_READYING,
   PEER_STATE_CONNECTED,
-  PEER_STATE_DEAD,
   PEER_STATE_END
 };
 
@@ -44,7 +45,7 @@ enum MessageType {
 
 extern const char* MessageTypeNames[MESSAGE_TYPE_END];
 
-#define ID_LENGTH (14)
+#define ID_LENGTH (13)
 
 #define JOIN_MSG_ID_OFFSET (1)
 #define JOIN_MSG_ID_LENGTH (ID_LENGTH)
@@ -52,5 +53,6 @@ extern const char* MessageTypeNames[MESSAGE_TYPE_END];
 #define JOIN_MSG_KEY_OFFSET (JOIN_MSG_ID_OFFSET + JOIN_MSG_ID_LENGTH)
 #define JOIN_MSG_KEY_LENGTH (5)
 
+#define JOIN_NOTIF_IP_OFFSET (JOIN_MSG_KEY_OFFSET + JOIN_MSG_KEY_LENGTH)
 
 #endif 

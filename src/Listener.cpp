@@ -31,11 +31,11 @@ void Listener::handle_accept(list<Peer*>::iterator new_peer_it,
   if (!error) {
     shared_ptr<Peer> new_peer(*new_peer_it);
 
-    network->add_peer(new_peer);
+    network->add_new_peer(new_peer);
 
     pending_peers.erase(new_peer_it);
 
-    DEBUG("Peer at address " << new_peer->get_address() << " has joined!");
+    DEBUG("Peer at address " << new_peer->get_address() << " has been accepted!");
 
     start_accept();
   }

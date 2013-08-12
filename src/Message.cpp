@@ -8,14 +8,19 @@ Message::Message(Message::Type _type)
 {
 }
 
-string Message::serialize()
+const Message::Type Message::get_type()
 {
-  string s;
-  s.push_back(type);
-  return s;
+  return type;
 }
 
-void Message::display()
-{
-  cout << "Empty message" << endl;
-}
+// string Message::serialize()
+// {
+//   string s;
+//   s.push_back(type);
+//   return s;
+// }
+
+// void Message::display()
+// {
+//   cout << "Empty message" << endl;
+// }

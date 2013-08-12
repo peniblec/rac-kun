@@ -1,14 +1,14 @@
-#ifndef JOIN_MESSAGE_H
-#define JOIN_MESSAGE_H
+#ifndef JOIN_NOTIF_MESSAGE_H
+#define JOIN_NOTIF_MESSAGE_H
 
 #include "Config.hpp"
 
 #include "Message.hpp"
 
-class JoinMessage : public Message
+class JoinNotifMessage : public Message
 {
 public:
-  JoinMessage(string _id, string _pub_k);
+  JoinNotifMessage(string _id, string _pub_k, string ip);
   
   string serialize();
   void display();
@@ -21,9 +21,14 @@ public:
     return pub_k;
   }
   
+  const string get_ip() {
+    return ip;
+  }
+
 private:
   string id;
   string pub_k;
+  string ip;
 };
 
 

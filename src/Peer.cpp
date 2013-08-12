@@ -6,21 +6,26 @@
 
 
 Peer::Peer(shared_ptr<tcp::socket> _socket)
-  : socket(_socket), state(PEER_STATE_CONNECTING)
+  : socket(_socket), state(PEER_STATE_NEW)
 {
 }
 
 void Peer::set_state(Peer::State new_state)
 {
   state = new_state;
-  DEBUG("Peer @" << get_address() << " now has state " << PeerStateNames[state] << ".");
+  DEBUG("Peer @" << get_address() << " now has state " << PeerStateNames[state]
+        << " (" << state << ").");
+}
+
+void Peer::init(string _id, string _pub_key) {
+  id = _id;
+  pub_id_key = _pub_key;
 }
 
 void Peer::start_listening(Peer::Handler _listen_handler)
 {
   listen_handler = _listen_handler;
   id = get_address();
-  set_state(PEER_STATE_JOINING);
   listen();
 }
 
@@ -42,6 +47,12 @@ void Peer::send(string message)
 {
   // TODO: limit buffer size to MESSAGE_SIZE, loop until whole is sent
   socket->async_write_some(asio::buffer(message),
+                           bind(&Peer::finish_write, this));
+}
+
+void Peer::send(Message* message)
+{
+  socket->async_write_some(asio::buffer( message->serialize() ),
                            bind(&Peer::finish_write, this));
 }
 

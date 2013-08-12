@@ -6,6 +6,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "Config.hpp"
+#include "Message.hpp"
 #include "Network.hpp"
 
 using namespace boost;
@@ -21,6 +22,8 @@ public:
   Peer(shared_ptr<tcp::socket> _socket);
 
   void set_state(State new_state);
+
+  void init(string _id, string _pub_key);
 
   void start_listening(Handler _listen_handler);
 
@@ -46,16 +49,18 @@ public:
   }
 
   void send(string message);
-
+  void send(Message* message);
+  
   void finish_write();
 
-  bool is_alive() {
-    return (state!=PEER_STATE_DEAD);
-  }
+  // bool is_alive() {
+  //   return (state!=PEER_STATE_DEAD);
+  // }
 
 
 private:
   string id;
+  string pub_id_key;
   shared_ptr<tcp::socket> socket;
   char last_message[MESSAGE_SIZE];
   State state;

@@ -1,6 +1,7 @@
 #include <sstream>
 
 #include "Message.hpp"
+#include "JoinNotifMessage.hpp"
 #include "Utils.hpp"
 
 
@@ -33,8 +34,6 @@ Message* parse_message(string msg)
 {
   Message::Type msg_type = (Message::Type)msg[0];
 
-  DEBUG("Type found: " << msg_type);
-  
   switch (msg_type) {
   case MESSAGE_TYPE_JOIN:
     {
@@ -43,6 +42,16 @@ Message* parse_message(string msg)
 
       JoinMessage* m = new JoinMessage(id, pub_k);
     
+      return m;
+    }
+  case MESSAGE_TYPE_JOIN_NOTIF:
+    {
+      string id(msg, JOIN_MSG_ID_OFFSET, JOIN_MSG_ID_LENGTH);
+      string pub_k(msg, JOIN_MSG_KEY_OFFSET, JOIN_MSG_KEY_LENGTH);
+      string ip(msg, JOIN_NOTIF_IP_OFFSET);
+      
+      JoinNotifMessage* m = new JoinNotifMessage(id, pub_k, ip);
+
       return m;
     }
   default:

@@ -11,7 +11,7 @@ LIBS_INC=/usr/include
 INCLUDE=-I$(INC) -I$(LIBS_INC)
 
 
-OBJ=Main.o Config.o Listener.o LocalPeer.o Message.o JoinMessage.o Peer.o Network.o Utils.o
+OBJ=Main.o Config.o Listener.o LocalPeer.o Message.o JoinMessage.o JoinNotifMessage.o Peer.o Network.o Utils.o
 EXE=node
 
 
@@ -24,6 +24,7 @@ Listener.o : $(SRC)/Listener.cpp $(INC)/Listener.hpp $(INC)/Config.hpp
 LocalPeer.o : $(SRC)/LocalPeer.cpp $(INC)/LocalPeer.hpp $(INC)/Config.hpp
 Message.o : $(SRC)/Message.cpp $(INC)/Message.hpp $(INC)/Config.hpp
 JoinMessage.o : $(SRC)/JoinMessage.cpp $(INC)/JoinMessage.hpp $(INC)/Config.hpp
+JoinNotifMessage.o : $(SRC)/JoinNotifMessage.cpp $(INC)/JoinNotifMessage.hpp $(INC)/Config.hpp
 Network.o : $(SRC)/Network.cpp $(INC)/Network.hpp $(INC)/Config.hpp
 Peer.o : $(SRC)/Peer.cpp $(INC)/Peer.hpp $(INC)/Config.hpp
 Utils.o : $(SRC)/Utils.cpp $(INC)/Utils.hpp $(INC)/Config.hpp
