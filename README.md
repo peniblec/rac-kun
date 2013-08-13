@@ -8,7 +8,7 @@ This is a prototype for RAC, a freerider-resilient, scalable, anonymous
 communication protocol conceived by researchers from CNRS and LIG.
 
 Implemented features:
-- None yet.
+- Join procedure (no group, no ring)
 
 Next features to be implemented:
 - Ring broadcast
