@@ -28,7 +28,7 @@ int main() {
 
   cout << "What to do?" << endl
        << "send <message> - Send <message> to peers" << endl
-       << "add <address> - Add peer with address <address>" << endl
+       // << "add <address> - Add peer with address <address>" << endl
        << "join <address> - Join a session using <address> as an entry point" << endl;
 
   for(;;) {
@@ -42,10 +42,10 @@ int main() {
 
       network->send_all(argument);
     }
-    else if ( command.compare(COMMAND_ADD)==0 ) {
+    // else if ( command.compare(COMMAND_ADD)==0 ) {
 
-      network->connect_peer(argument);
-    }
+    //   network->connect_peer(argument);
+    // }
     else if ( command.compare(COMMAND_JOIN)==0 ) {
 
       network->join(argument);
