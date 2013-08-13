@@ -28,7 +28,7 @@ public:
     add_new_peer(p, new_peers);
   }
 
-  shared_ptr<Peer> join(string entry_point);
+  void join(string entry_point);
   shared_ptr<Peer> connect_peer(string peer_name);
   
   const PeerMap get_peers() {
@@ -49,6 +49,8 @@ private:
   PeerMap joining_peers; // sorted with ID
   
   LocalPeer& local_peer;
+
+  asio::deadline_timer ready_timer;
 };
 
 

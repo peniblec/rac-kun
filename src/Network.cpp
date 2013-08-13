@@ -1,14 +1,19 @@
 #include <boost/bind.hpp>
 
 #include "Message.hpp"
+#include "JoinMessage.hpp"
 #include "JoinNotifMessage.hpp"
+#include "JoinAckMessage.hpp"
+#include "ReadyMessage.hpp"
+
 #include "Network.hpp"
 #include "Utils.hpp"
 
 Network::Network(shared_ptr<asio::io_service> _ios,
                  shared_ptr<tcp::resolver> _resolver,
                  LocalPeer& p)
-  : io_service(_ios), resolver(_resolver), local_peer(p)
+  : io_service(_ios), resolver(_resolver), local_peer(p),
+    ready_timer(*_ios, posix_time::seconds(READY_TIME))
 {
 
 }
@@ -22,14 +27,16 @@ void Network::add_new_peer(shared_ptr<Peer> p, PeerMap& some_map)
   p->start_listening(listen_handler);
 }
 
-shared_ptr<Peer> Network::join(string entry_point)
+void Network::join(string entry_point)
 {
   shared_ptr<Peer> entry_peer = connect_peer(entry_point);
   entry_peer->set_state(PEER_STATE_CONNECTED);
+  local_peer.set_state(LOCAL_STATE_JOINING);
 
   add_new_peer(entry_peer, peers);
   
-  return entry_peer;
+  JoinMessage join(local_peer.get_id(), local_peer.get_pub_key());
+  entry_peer->send(join.serialize());
 }
 
 shared_ptr<Peer> Network::connect_peer(string peer_name)
@@ -79,6 +86,12 @@ void Network::handle_incoming_message(const system::error_code& error,
         if (local_peer.get_state() != LOCAL_STATE_CONNECTED)
           local_peer.set_state(LOCAL_STATE_CONNECTED);
 
+        // As the entry point for the emitter, we will
+        // - broadcast its join request (as a join notif) to the group
+        // - move emitter from new_peers to joining_peers
+        // - wait for T, then send READY to emitter
+        // - add it to correct position in rings
+        
         JoinMessage* msg = dynamic_cast<JoinMessage*>(message);
 
         emitter->init( msg->get_id(), msg->get_key() );
@@ -87,16 +100,25 @@ void Network::handle_incoming_message(const system::error_code& error,
 
         send_all(notif.serialize());
 
+        new_peers.erase( emitter->get_address() );
         joining_peers[ emitter->get_id() ] = emitter;
         emitter->set_state(PEER_STATE_JOINING);
-        new_peers.erase( emitter->get_address() );
-        
-        
-        // wait for T, then send READY to emitter
+
+        shared_ptr<ReadyMessage> ready(new ReadyMessage());
+
+        ready_timer.async_wait( bind(&Peer::get_ready, emitter,
+                                     asio::placeholders::error, ready) );
+
       }
         break;
 
       case MESSAGE_TYPE_JOIN_NOTIF: {
+
+        // Emitter is the entry point for some peer we don't know yet. 
+        // - add this peer to our view
+        // - send it a join ack so that it knows about us
+        // - add it to joining_peers
+        // - add it to correct position in rings
 
         JoinNotifMessage* msg = dynamic_cast<JoinNotifMessage*>(message);
 
@@ -104,16 +126,39 @@ void Network::handle_incoming_message(const system::error_code& error,
         shared_ptr<Peer> new_peer = connect_peer( msg->get_ip() );
         new_peer->set_state(PEER_STATE_JOINING);
         add_new_peer(new_peer, joining_peers);
+
+        JoinAckMessage ack( local_peer.get_id(), local_peer.get_pub_key() );
+        new_peer->send( ack.serialize() );
       }
         break;
+
+      case MESSAGE_TYPE_JOIN_ACK: {
+
+        // We're joining, group members start making themselves known
+        // - store the emitter in regular peers map
+
+        JoinAckMessage* msg = dynamic_cast<JoinAckMessage*>(message);
+        // check whether we're joining/readying, maybe?
+        
+        emitter->init( msg->get_id(), msg->get_key() );
+        new_peers.erase( emitter->get_address() );
+        peers[ emitter->get_id() ] = emitter;
+
+        emitter->set_state(PEER_STATE_CONNECTED);
+      }
+        break;
+
+      case MESSAGE_TYPE_READY: {
+
+        // time to send READY_NOTIF to everyone, and compute our position on the rings
+        local_peer.set_state(LOCAL_STATE_READYING);
+      }
         
       default: {
         // bleh
       }
 
       }
-      message->display();
-
     }
     catch (MessageParseException& e) {
       DEBUG("Couldn't make sense of this: " << emitter->get_last_message());

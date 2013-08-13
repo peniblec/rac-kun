@@ -5,8 +5,6 @@
 
 #include "Config.hpp"
 
-
-
 struct MessageParseException : public std::exception {
   const char* what() const throw()
   { return "Could not parse message"; }

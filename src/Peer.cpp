@@ -50,10 +50,21 @@ void Peer::send(string message)
                            bind(&Peer::finish_write, this));
 }
 
-void Peer::send(Message* message)
+// void Peer::send(shared_ptr<Message> message)
+// {
+//   socket->async_write_some(asio::buffer( message->serialize() ),
+//                            bind(&Peer::finish_write, this));
+// }
+
+void Peer::get_ready(const system::error_code& error, shared_ptr<ReadyMessage> message)
 {
-  socket->async_write_some(asio::buffer( message->serialize() ),
-                           bind(&Peer::finish_write, this));
+  if (!error) {
+    set_state(PEER_STATE_READYING);
+    send(message->serialize());
+  }
+  else {
+    DEBUG("Peer::get_ready: " << error.message());
+  }
 }
 
 void Peer::finish_write()

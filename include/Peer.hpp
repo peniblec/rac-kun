@@ -7,6 +7,7 @@
 
 #include "Config.hpp"
 #include "Message.hpp"
+#include "ReadyMessage.hpp"
 #include "Network.hpp"
 
 using namespace boost;
@@ -49,14 +50,10 @@ public:
   }
 
   void send(string message);
-  void send(Message* message);
+  // void send(shared_ptr<Message> message);
+  void get_ready(const system::error_code& error, shared_ptr<ReadyMessage> message);
   
   void finish_write();
-
-  // bool is_alive() {
-  //   return (state!=PEER_STATE_DEAD);
-  // }
-
 
 private:
   string id;

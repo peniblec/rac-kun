@@ -1,8 +1,11 @@
 #include <sstream>
 
-#include "Message.hpp"
-#include "JoinNotifMessage.hpp"
 #include "Utils.hpp"
+
+#include "JoinMessage.hpp"
+#include "JoinNotifMessage.hpp"
+#include "JoinAckMessage.hpp"
+#include "ReadyMessage.hpp"
 
 
 
@@ -54,6 +57,23 @@ Message* parse_message(string msg)
 
       return m;
     }
+  case MESSAGE_TYPE_JOIN_ACK:
+    {
+      string id(msg, JOIN_MSG_ID_OFFSET, JOIN_MSG_ID_LENGTH);
+      string pub_k(msg, JOIN_MSG_KEY_OFFSET, JOIN_MSG_KEY_LENGTH);
+
+      JoinAckMessage* m = new JoinAckMessage(id, pub_k);
+    
+      return m;
+    }
+  case MESSAGE_TYPE_READY:
+    {
+      ReadyMessage* m = new ReadyMessage();
+    
+      return m;
+    }
+
+
   default:
     throw MessageParseException();
   }

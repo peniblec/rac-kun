@@ -6,7 +6,6 @@
 
 #include "Config.hpp"
 
-#include "JoinMessage.hpp"
 #include "Message.hpp"
 
 #ifdef DEBUG_ON

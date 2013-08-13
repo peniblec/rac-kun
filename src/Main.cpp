@@ -48,11 +48,7 @@ int main() {
     }
     else if ( command.compare(COMMAND_JOIN)==0 ) {
 
-      local_peer.set_state(LOCAL_STATE_JOINING);
-      shared_ptr<Peer> entry_point = network->join(argument);
-
-      JoinMessage* join = new JoinMessage(local_peer.get_id(), local_peer.get_pub_key());
-      entry_point->send(join);
+      network->join(argument);
     }
 
     
