@@ -6,16 +6,16 @@
 
 
 Peer::Peer(shared_ptr<tcp::socket> _socket)
-  : socket(_socket), state(PEER_STATE_NEW)
+  : socket(_socket)//, state(PEER_STATE_NEW)
 {
 }
 
-void Peer::set_state(Peer::State new_state)
-{
-  state = new_state;
-  DEBUG("Peer @" << get_address() << " now has state " << PeerStateNames[state]
-        << " (" << state << ").");
-}
+// void Peer::set_state(Peer::State new_state)
+// {
+//   state = new_state;
+//   DEBUG("Peer @" << get_address() << " now has state " << PeerStateNames[state]
+//         << " (" << state << ").");
+// }
 
 void Peer::init(string _id, string _pub_key) {
   id = _id;

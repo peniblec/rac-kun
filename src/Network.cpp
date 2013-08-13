@@ -30,7 +30,7 @@ void Network::add_new_peer(shared_ptr<Peer> p, PeerMap& some_map)
 void Network::join(string entry_point)
 {
   shared_ptr<Peer> entry_peer = connect_peer(entry_point);
-  entry_peer->set_state(PEER_STATE_CONNECTED);
+  // entry_peer->set_state(PEER_STATE_CONNECTED);
   local_peer.set_state(LOCAL_STATE_JOINING);
 
   add_new_peer(entry_peer, peers);
@@ -67,7 +67,7 @@ void Network::send_all(string message)
 void Network::send_ready(const system::error_code& error, shared_ptr<Peer> peer)
 {
   if (!error) {
-    peer->set_state(PEER_STATE_READYING);
+    // peer->set_state(PEER_STATE_READYING);
     ReadyMessage ready;
     peer->send(ready.serialize());
     ready_timers.erase( peer->get_id() );
@@ -114,7 +114,7 @@ void Network::handle_incoming_message(const system::error_code& error,
 
         new_peers.erase( emitter->get_address() );
         joining_peers[ emitter->get_id() ] = emitter;
-        emitter->set_state(PEER_STATE_JOINING);
+        // emitter->set_state(PEER_STATE_JOINING);
 
         shared_ptr<asio::deadline_timer> t
           (new asio::deadline_timer(*io_service, posix_time::seconds(READY_TIME)));
@@ -138,7 +138,7 @@ void Network::handle_incoming_message(const system::error_code& error,
 
         // if ID is valid
         shared_ptr<Peer> new_peer = connect_peer( msg->get_ip() );
-        new_peer->set_state(PEER_STATE_JOINING);
+        // new_peer->set_state(PEER_STATE_JOINING);
         add_new_peer(new_peer, joining_peers);
 
         JoinAckMessage ack( local_peer.get_id(), local_peer.get_pub_key() );
@@ -158,7 +158,7 @@ void Network::handle_incoming_message(const system::error_code& error,
         new_peers.erase( emitter->get_address() );
         peers[ emitter->get_id() ] = emitter;
 
-        emitter->set_state(PEER_STATE_CONNECTED);
+        // emitter->set_state(PEER_STATE_CONNECTED);
       }
         break;
 
@@ -181,7 +181,7 @@ void Network::handle_incoming_message(const system::error_code& error,
         joining_peers.erase( emitter->get_id() );
         peers[ emitter->get_id() ] = emitter;
 
-        emitter->set_state(PEER_STATE_CONNECTED);
+        // emitter->set_state(PEER_STATE_CONNECTED);
       }
         break;
         

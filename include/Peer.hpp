@@ -16,13 +16,13 @@ using boost::asio::ip::tcp;
 class Peer
 {
 public:
-  typedef PeerState State;
+  // typedef PeerState State;
   typedef function<void (const system::error_code&)> Handler;
   
 
   Peer(shared_ptr<tcp::socket> _socket);
 
-  void set_state(State new_state);
+  // void set_state(State new_state);
 
   void init(string _id, string _pub_key);
 
@@ -60,7 +60,7 @@ private:
   string pub_id_key;
   shared_ptr<tcp::socket> socket;
   char last_message[MESSAGE_SIZE];
-  State state;
+  // State state;
   Handler listen_handler;
   
 };
