@@ -18,5 +18,5 @@ string JoinMessage::serialize()
 
 void JoinMessage::display()
 {
-  cout << "Join message from peer " << id << " with key " << pub_k << endl;
+  cout << "Peer with id " << id << " and key " << pub_k << " wants to join." << endl;
 }

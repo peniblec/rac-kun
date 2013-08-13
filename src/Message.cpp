@@ -8,6 +8,10 @@ Message::Message(Message::Type _type)
 {
 }
 
+Message::~Message()
+{
+}
+
 const Message::Type Message::get_type()
 {
   return type;

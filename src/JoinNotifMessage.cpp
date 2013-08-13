@@ -19,5 +19,5 @@ string JoinNotifMessage::serialize()
 
 void JoinNotifMessage::display()
 {
-  cout << "Join notification about peer " << id << " with key " << pub_k << endl;
+  cout << "Peer with id " << id << " (" << ip << ") and key " << pub_k << " wants to join." << endl;
 }

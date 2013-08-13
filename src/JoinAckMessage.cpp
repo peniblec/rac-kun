@@ -18,5 +18,5 @@ string JoinAckMessage::serialize()
 
 void JoinAckMessage::display()
 {
-  cout << "Join acknowledgement from peer " << id << " with key " << pub_k << endl;
+  cout << "Peer " << id << " with key " << pub_k << " has added us to its view."  << endl;
 }

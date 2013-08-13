@@ -5,6 +5,7 @@
 #include "JoinNotifMessage.hpp"
 #include "JoinAckMessage.hpp"
 #include "ReadyMessage.hpp"
+#include "ReadyNotifMessage.hpp"
 
 #include "Network.hpp"
 #include "Utils.hpp"
@@ -12,8 +13,7 @@
 Network::Network(shared_ptr<asio::io_service> _ios,
                  shared_ptr<tcp::resolver> _resolver,
                  LocalPeer& p)
-  : io_service(_ios), resolver(_resolver), local_peer(p),
-    ready_timer(*_ios, posix_time::seconds(READY_TIME))
+  : io_service(_ios), resolver(_resolver), local_peer(p)
 {
 
 }
@@ -64,6 +64,19 @@ void Network::send_all(string message)
   }
 }
 
+void Network::send_ready(const system::error_code& error, shared_ptr<Peer> peer)
+{
+  if (!error) {
+    peer->set_state(PEER_STATE_READYING);
+    ReadyMessage ready;
+    peer->send(ready.serialize());
+    ready_timers.erase( peer->get_id() );
+  }
+  else {
+    DEBUG("Network::send_ready: " << error.message());
+  }
+}
+
 void Network::handle_incoming_message(const system::error_code& error,
                                       shared_ptr<Peer> emitter)
 {
@@ -77,7 +90,6 @@ void Network::handle_incoming_message(const system::error_code& error,
   else {
     try {
       Message* message = parse_message(emitter->get_last_message());
-      message->display();
 
       switch (message->get_type()) {
 
@@ -104,10 +116,12 @@ void Network::handle_incoming_message(const system::error_code& error,
         joining_peers[ emitter->get_id() ] = emitter;
         emitter->set_state(PEER_STATE_JOINING);
 
-        shared_ptr<ReadyMessage> ready(new ReadyMessage());
+        shared_ptr<asio::deadline_timer> t
+          (new asio::deadline_timer(*io_service, posix_time::seconds(READY_TIME)));
+        ready_timers[ emitter->get_id() ] = t;
 
-        ready_timer.async_wait( bind(&Peer::get_ready, emitter,
-                                     asio::placeholders::error, ready) );
+        t->async_wait( bind(&Network::send_ready, this,
+                           asio::placeholders::error, emitter) );
 
       }
         break;
@@ -152,13 +166,34 @@ void Network::handle_incoming_message(const system::error_code& error,
 
         // time to send READY_NOTIF to everyone, and compute our position on the rings
         local_peer.set_state(LOCAL_STATE_READYING);
+
+        ReadyNotifMessage notif;
+        send_all(notif.serialize()); // TODO: send only to direct predecessors/followers
+
+        local_peer.set_state(LOCAL_STATE_CONNECTED);
+        // TODO: figure out whether Readying state is useful
       }
+        break;
+
+      case MESSAGE_TYPE_READY_NOTIF: {
+
+        // emitter is now ready to communicate with us: move to regular peers map
+        joining_peers.erase( emitter->get_id() );
+        peers[ emitter->get_id() ] = emitter;
+
+        emitter->set_state(PEER_STATE_CONNECTED);
+      }
+        break;
         
-      default: {
-        // bleh
+      default: 
+        throw MessageParseException();
       }
 
-      }
+      DEBUG("Peer " << emitter->get_id() << " sent a "
+            << MessageTypeNames[ message->get_type() ] << ":");
+      message->display();
+      
+      delete message;
     }
     catch (MessageParseException& e) {
       DEBUG("Couldn't make sense of this: " << emitter->get_last_message());

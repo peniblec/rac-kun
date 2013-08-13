@@ -15,8 +15,11 @@ class Message
 public:
   typedef MessageType Type;
 
+  virtual ~Message();
+
   virtual string serialize() = 0;
   virtual void display() = 0;
+
 
   const Type get_type();
 

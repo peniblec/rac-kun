@@ -6,7 +6,7 @@
 #include "JoinNotifMessage.hpp"
 #include "JoinAckMessage.hpp"
 #include "ReadyMessage.hpp"
-
+#include "ReadyNotifMessage.hpp"
 
 
 void parse_input(string& input, string& command, string& argument)
@@ -72,7 +72,12 @@ Message* parse_message(string msg)
     
       return m;
     }
+  case MESSAGE_TYPE_READY_NOTIF:
+    {
+      ReadyNotifMessage* m = new ReadyNotifMessage();
 
+      return m;
+    }
 
   default:
     throw MessageParseException();

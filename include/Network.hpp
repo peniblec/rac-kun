@@ -36,6 +36,7 @@ public:
   }
 
   void send_all(string message);
+  void send_ready(const system::error_code& error, shared_ptr<Peer> peer);
 
   void handle_incoming_message(const system::error_code& error,
                                shared_ptr<Peer> emitter);
@@ -50,7 +51,7 @@ private:
   
   LocalPeer& local_peer;
 
-  asio::deadline_timer ready_timer;
+  map<string, shared_ptr<asio::deadline_timer> > ready_timers;
 };
 
 
