@@ -1,8 +1,6 @@
 #ifndef PEER_H
 #define PEER_H
 
-#include "Utils.hpp"
-
 #include <boost/asio.hpp>
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>

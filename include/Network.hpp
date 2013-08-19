@@ -5,7 +5,6 @@
 #include <map>
 
 #include "Config.hpp"
-// #include "LocalPeer.hpp"
 #include "Peer.hpp"
 
 using namespace boost;
