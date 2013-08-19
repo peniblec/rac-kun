@@ -19,8 +19,8 @@ int main() {
   shared_ptr<asio::io_service> io_service(new asio::io_service);
   shared_ptr<tcp::resolver> resolver(new tcp::resolver(*io_service));
 
-
-  LocalPeer local_peer;
+  shared_ptr<tcp::socket> null_ptr;
+  Peer local_peer(null_ptr, true);
   shared_ptr<Network> network(new Network(io_service, resolver, local_peer));
   Listener listener(io_service, network);
 

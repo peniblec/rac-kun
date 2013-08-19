@@ -23,15 +23,15 @@ enum PeerState {
 
 extern const char* PeerStateNames[PEER_STATE_END];
 
-enum LocalState {
-  LOCAL_STATE_ALONE = 0,
-  LOCAL_STATE_JOINING,
-  LOCAL_STATE_READYING,
-  LOCAL_STATE_CONNECTED,
-  LOCAL_STATE_END
-};
+// enum LocalState {
+//   LOCAL_STATE_ALONE = 0,
+//   LOCAL_STATE_JOINING,
+//   LOCAL_STATE_READYING,
+//   LOCAL_STATE_CONNECTED,
+//   LOCAL_STATE_END
+// };
 
-extern const char* LocalStateNames[LOCAL_STATE_END];
+// extern const char* LocalStateNames[LOCAL_STATE_END];
 
 enum MessageType {
   MESSAGE_TYPE_NONE = 0,

@@ -8,13 +8,13 @@ const char* PeerStateNames[PEER_STATE_END] =
     "Connected"
   };
 
-const char* LocalStateNames[LOCAL_STATE_END] =
-  {
-    "Alone",
-    "Joining",
-    "Readying",
-    "Connected"
-  };
+// const char* LocalStateNames[LOCAL_STATE_END] =
+//   {
+//     "Alone",
+//     "Joining",
+//     "Readying",
+//     "Connected"
+//   };
 
 const char* MessageTypeNames[MESSAGE_TYPE_END] =
   {

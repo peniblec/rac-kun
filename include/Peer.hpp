@@ -1,6 +1,8 @@
 #ifndef PEER_H
 #define PEER_H
 
+#include "Utils.hpp"
+
 #include <boost/asio.hpp>
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
@@ -16,13 +18,13 @@ using boost::asio::ip::tcp;
 class Peer
 {
 public:
-  // typedef PeerState State;
+  typedef PeerState State;
   typedef function<void (const system::error_code&)> Handler;
   
 
-  Peer(shared_ptr<tcp::socket> _socket);
+  Peer(shared_ptr<tcp::socket> _socket, bool _local = false);
 
-  // void set_state(State new_state);
+  void set_state(State new_state);
 
   void init(string _id, string _pub_key);
 
@@ -37,11 +39,19 @@ public:
   }
 
   const string get_address() {
-    return socket->remote_endpoint().address().to_string();
+    return (local ? "localhost" : socket->remote_endpoint().address().to_string());
   }
 
   const string get_id() {
     return id;
+  }
+
+  const string get_key() {
+    return pub_id_key;
+  }
+
+  const State get_state() {
+    return state;
   }
 
   const string get_last_message() {
@@ -60,8 +70,9 @@ private:
   string pub_id_key;
   shared_ptr<tcp::socket> socket;
   char last_message[MESSAGE_SIZE];
-  // State state;
+  State state;
   Handler listen_handler;
+  bool local;
   
 };
 

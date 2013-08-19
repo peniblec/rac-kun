@@ -5,7 +5,7 @@
 #include <map>
 
 #include "Config.hpp"
-#include "LocalPeer.hpp"
+// #include "LocalPeer.hpp"
 #include "Peer.hpp"
 
 using namespace boost;
@@ -21,7 +21,7 @@ public:
 
   Network(shared_ptr<asio::io_service> _ios,
           shared_ptr<tcp::resolver> _resolver,
-	  LocalPeer& p);
+	  Peer& p);
   
   void add_new_peer(shared_ptr<Peer> p, PeerMap& m);
   void add_new_peer(shared_ptr<Peer> p) {
@@ -49,7 +49,7 @@ private:
   PeerMap new_peers; // sorted with IP
   PeerMap joining_peers; // sorted with ID
   
-  LocalPeer& local_peer;
+  Peer& local_peer;
 
   map<string, shared_ptr<asio::deadline_timer> > ready_timers;
 };

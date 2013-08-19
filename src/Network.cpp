@@ -12,10 +12,17 @@
 
 Network::Network(shared_ptr<asio::io_service> _ios,
                  shared_ptr<tcp::resolver> _resolver,
-                 LocalPeer& p)
+                 Peer& p)
   : io_service(_ios), resolver(_resolver), local_peer(p)
 {
+  char name[ID_LENGTH + 1];
+  name[ID_LENGTH] = '\0';
+  // gethostname is not guaranteed to add \0 if it needs to truncate host name
+  gethostname(name, sizeof(name) -1);
 
+  string id(name);
+
+  p.init( id, "AAAAA" );
 }
 
 void Network::add_new_peer(shared_ptr<Peer> p, PeerMap& some_map)
@@ -30,12 +37,12 @@ void Network::add_new_peer(shared_ptr<Peer> p, PeerMap& some_map)
 void Network::join(string entry_point)
 {
   shared_ptr<Peer> entry_peer = connect_peer(entry_point);
-  // entry_peer->set_state(PEER_STATE_CONNECTED);
-  local_peer.set_state(LOCAL_STATE_JOINING);
+  entry_peer->set_state(PEER_STATE_CONNECTED);
+  local_peer.set_state(PEER_STATE_JOINING);
 
   add_new_peer(entry_peer, peers);
   
-  JoinMessage join(local_peer.get_id(), local_peer.get_pub_key());
+  JoinMessage join(local_peer.get_id(), local_peer.get_key());
   entry_peer->send(join.serialize());
 }
 
@@ -67,7 +74,7 @@ void Network::send_all(string message)
 void Network::send_ready(const system::error_code& error, shared_ptr<Peer> peer)
 {
   if (!error) {
-    // peer->set_state(PEER_STATE_READYING);
+    peer->set_state(PEER_STATE_READYING);
     ReadyMessage ready;
     peer->send(ready.serialize());
     ready_timers.erase( peer->get_id() );
@@ -95,8 +102,8 @@ void Network::handle_incoming_message(const system::error_code& error,
 
       case MESSAGE_TYPE_JOIN: {
         // if we've been alone so far, consider we constitute a functional network
-        if (local_peer.get_state() != LOCAL_STATE_CONNECTED)
-          local_peer.set_state(LOCAL_STATE_CONNECTED);
+        if (local_peer.get_state() != PEER_STATE_CONNECTED)
+          local_peer.set_state(PEER_STATE_CONNECTED);
 
         // As the entry point for the emitter, we will
         // - broadcast its join request (as a join notif) to the group
@@ -114,7 +121,7 @@ void Network::handle_incoming_message(const system::error_code& error,
 
         new_peers.erase( emitter->get_address() );
         joining_peers[ emitter->get_id() ] = emitter;
-        // emitter->set_state(PEER_STATE_JOINING);
+        emitter->set_state(PEER_STATE_JOINING); // TODO: set 2T timer if not succ/pred
 
         shared_ptr<asio::deadline_timer> t
           (new asio::deadline_timer(*io_service, posix_time::seconds(READY_TIME)));
@@ -138,10 +145,10 @@ void Network::handle_incoming_message(const system::error_code& error,
 
         // if ID is valid
         shared_ptr<Peer> new_peer = connect_peer( msg->get_ip() );
-        // new_peer->set_state(PEER_STATE_JOINING);
+        new_peer->set_state(PEER_STATE_JOINING); // TODO: set 2T timer if not pred/succ
         add_new_peer(new_peer, joining_peers);
 
-        JoinAckMessage ack( local_peer.get_id(), local_peer.get_pub_key() );
+        JoinAckMessage ack( local_peer.get_id(), local_peer.get_key() );
         new_peer->send( ack.serialize() );
       }
         break;
@@ -158,19 +165,19 @@ void Network::handle_incoming_message(const system::error_code& error,
         new_peers.erase( emitter->get_address() );
         peers[ emitter->get_id() ] = emitter;
 
-        // emitter->set_state(PEER_STATE_CONNECTED);
+        emitter->set_state(PEER_STATE_CONNECTED);
       }
         break;
 
       case MESSAGE_TYPE_READY: {
 
         // time to send READY_NOTIF to everyone, and compute our position on the rings
-        local_peer.set_state(LOCAL_STATE_READYING);
+        local_peer.set_state(PEER_STATE_READYING);
 
         ReadyNotifMessage notif;
         send_all(notif.serialize()); // TODO: send only to direct predecessors/followers
 
-        local_peer.set_state(LOCAL_STATE_CONNECTED);
+        local_peer.set_state(PEER_STATE_CONNECTED);
         // TODO: figure out whether Readying state is useful
       }
         break;
@@ -181,7 +188,7 @@ void Network::handle_incoming_message(const system::error_code& error,
         joining_peers.erase( emitter->get_id() );
         peers[ emitter->get_id() ] = emitter;
 
-        // emitter->set_state(PEER_STATE_CONNECTED);
+        emitter->set_state(PEER_STATE_CONNECTED);
       }
         break;
         

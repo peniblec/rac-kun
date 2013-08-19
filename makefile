@@ -11,7 +11,8 @@ LIBS_INC=/usr/include
 INCLUDE=-I$(INC) -I$(LIBS_INC)
 
 MESSAGES_OBJ=Message.o JoinMessage.o JoinNotifMessage.o JoinAckMessage.o ReadyMessage.o ReadyNotifMessage.o
-OBJ=Main.o Config.o Listener.o LocalPeer.o $(MESSAGES_OBJ) Peer.o Network.o Utils.o
+OBJ=Main.o Config.o Listener.o $(MESSAGES_OBJ) Peer.o Network.o Utils.o
+# OBJ=Main.o Config.o Listener.o LocalPeer.o $(MESSAGES_OBJ) Peer.o Network.o Utils.o
 EXE=node
 
 
@@ -21,7 +22,7 @@ $(EXE): $(OBJ)
 Main.o : $(SRC)/Main.cpp $(INC)/Config.hpp
 Config.o : $(SRC)/Config.cpp $(INC)/Config.hpp
 Listener.o : $(SRC)/Listener.cpp $(INC)/Listener.hpp $(INC)/Config.hpp
-LocalPeer.o : $(SRC)/LocalPeer.cpp $(INC)/LocalPeer.hpp $(INC)/Config.hpp
+# LocalPeer.o : $(SRC)/LocalPeer.cpp $(INC)/LocalPeer.hpp $(INC)/Config.hpp
 Message.o : $(SRC)/Message.cpp $(INC)/Message.hpp $(INC)/Config.hpp
 JoinMessage.o : $(SRC)/JoinMessage.cpp $(INC)/JoinMessage.hpp $(INC)/Config.hpp
 JoinNotifMessage.o : $(SRC)/JoinNotifMessage.cpp $(INC)/JoinNotifMessage.hpp $(INC)/Config.hpp
