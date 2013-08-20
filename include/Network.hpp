@@ -6,11 +6,10 @@
 
 #include "Config.hpp"
 #include "Peer.hpp"
+#include "Ring.hpp"
 
 using namespace boost;
 using boost::asio::ip::tcp;
-
-class Peer;
 
 class Network
 {
@@ -51,6 +50,9 @@ private:
   Peer& local_peer;
 
   map<string, shared_ptr<asio::deadline_timer> > ready_timers;
+
+  Ring rings[RINGS_NB];
+  
 };
 
 

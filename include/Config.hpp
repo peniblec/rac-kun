@@ -7,7 +7,7 @@ using namespace std;
 
 #define MESSAGE_SIZE 128
 #define RAC_PORT 1337
-
+#define RINGS_NB 3
 
 const string COMMAND_SEND = "send";
 const string COMMAND_ADD = "add";

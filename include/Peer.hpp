@@ -6,9 +6,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "Config.hpp"
-#include "Message.hpp"
 #include "ReadyMessage.hpp"
-#include "Network.hpp"
 
 using namespace boost;
 using boost::asio::ip::tcp;

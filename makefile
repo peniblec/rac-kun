@@ -5,13 +5,13 @@ RM=rm -f -R
 SRC=src
 INC=include
 
-LIBS=-L/usr/lib -lboost_thread -lboost_system
+LIBS=-L/usr/lib -lboost_thread -lboost_system -lcryptopp
 LIBS_INC=/usr/include
 
 INCLUDE=-I$(INC) -I$(LIBS_INC)
 
 MESSAGES_OBJ=Message.o JoinMessage.o JoinNotifMessage.o JoinAckMessage.o ReadyMessage.o ReadyNotifMessage.o
-OBJ=Main.o Config.o Listener.o $(MESSAGES_OBJ) Peer.o Network.o Utils.o
+OBJ=Main.o Config.o Listener.o $(MESSAGES_OBJ) Peer.o Network.o Ring.o Utils.o
 EXE=node
 
 
@@ -29,6 +29,7 @@ ReadyMessage.o : $(SRC)/ReadyMessage.cpp $(INC)/ReadyMessage.hpp $(INC)/Config.h
 ReadyNotifMessage.o : $(SRC)/ReadyNotifMessage.cpp $(INC)/ReadyNotifMessage.hpp $(INC)/Config.hpp
 Network.o : $(SRC)/Network.cpp $(INC)/Network.hpp $(INC)/Config.hpp
 Peer.o : $(SRC)/Peer.cpp $(INC)/Peer.hpp $(INC)/Config.hpp
+Ring.o : $(SRC)/Ring.cpp $(INC)/Ring.hpp $(INC)/Config.hpp
 Utils.o : $(SRC)/Utils.cpp $(INC)/Utils.hpp $(INC)/Config.hpp
 
 

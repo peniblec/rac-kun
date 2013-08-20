@@ -23,6 +23,11 @@ Network::Network(shared_ptr<asio::io_service> _ios,
   string id(name);
 
   p.init( id, "AAAAA" );
+
+
+  for (int i=0; i<RINGS_NB; i++)
+    rings[i] = Ring(i);
+
 }
 
 void Network::add_new_peer(shared_ptr<Peer> p, PeerMap& some_map)
