@@ -19,8 +19,8 @@ Credits
 
 RAC stems from the work of the following people:
 
-Sonia Ben Mokhtar (CNRS)
-Gautier Berthou (Grenoblec University)
-Amadou Diarra (Grenoble University)
-Vivien Quéma (Grenoble INP)
-Ali Shoker (CNRS)
+- Sonia Ben Mokhtar (CNRS)
+- Gautier Berthou (Grenoblec University)
+- Amadou Diarra (Grenoble University)
+- Vivien Quéma (Grenoble INP)
+- Ali Shoker (CNRS)
