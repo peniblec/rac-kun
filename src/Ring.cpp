@@ -58,9 +58,9 @@ void Ring::display()
 
     cout << it->second->get_id() << " ("
          << PeerStateNames[it->second->get_state()] << " with key: ";
-    for (uint n=0; n< it->first.size(); n++) {
-      cout << (short) (0x00FF & it->first[n]) << '|';
+    for (uint n=0; n< (it->first.size())/2; n++) {
+        cout << (int) ((unsigned char) it->first[n]) << '|';
     }
-    cout << ')' << endl;
+    cout << "...)" << endl;
   }
 }
