@@ -30,9 +30,9 @@ Network::Network(shared_ptr<asio::io_service> _ios,
 
 }
 
-void Network::add_new_peer(shared_ptr<Peer> p, PeerMap& some_map)
+void Network::add_new_peer(shared_ptr<Peer> p)
 {
-  some_map[ p->get_address() ] = p;
+  new_peers[ p->get_address() ] = p;
 
   Peer::Handler listen_handler = bind(&Network::handle_incoming_message, this,
                                       asio::placeholders::error, p);
@@ -45,7 +45,7 @@ void Network::join(string entry_point)
   entry_peer->set_state(PEER_STATE_CONNECTED);
   local_peer.set_state(PEER_STATE_JOINING);
 
-  add_new_peer(entry_peer, peers);
+  add_new_peer(entry_peer);
   
   JoinMessage join(local_peer.get_id(), local_peer.get_key());
   entry_peer->send(join.serialize());
@@ -125,8 +125,7 @@ void Network::handle_incoming_message(const system::error_code& error,
         send_all(notif.serialize());
 
         new_peers.erase( emitter->get_address() );
-        joining_peers[ emitter->get_id() ] = emitter;
-        emitter->set_state(PEER_STATE_JOINING); // TODO: set 2T timer if not succ/pred
+        handle_join(emitter);
 
         shared_ptr<asio::deadline_timer> t
           (new asio::deadline_timer(*io_service, posix_time::seconds(READY_TIME)));
@@ -150,11 +149,14 @@ void Network::handle_incoming_message(const system::error_code& error,
 
         // if ID is valid
         shared_ptr<Peer> new_peer = connect_peer( msg->get_ip() );
-        new_peer->set_state(PEER_STATE_JOINING); // TODO: set 2T timer if not pred/succ
-        add_new_peer(new_peer, joining_peers);
+        new_peer->init( msg->get_id(), msg->get_key() );
 
-        JoinAckMessage ack( local_peer.get_id(), local_peer.get_key() );
-        new_peer->send( ack.serialize() );
+        handle_join(new_peer);
+
+        Peer::Handler listen_handler = bind(&Network::handle_incoming_message, this,
+                                            asio::placeholders::error, new_peer);
+        new_peer->start_listening(listen_handler);
+        
       }
         break;
 
@@ -214,7 +216,19 @@ void Network::handle_incoming_message(const system::error_code& error,
   }  
 }
 
+void Network::handle_join(shared_ptr<Peer> peer)
+{
+  joining_peers[ peer->get_id() ] = peer;
+  peer->set_state( PEER_STATE_JOINING);
 
+  // TODO:
+  // - add to rings
+  // - if direct pred/succ, wait for READY before setting state to CONNECTED
+  // - else, wait for 2T before setting to CONNECTED
+
+  JoinAckMessage ack( local_peer.get_id(), local_peer.get_key() );
+  peer->send( ack.serialize() );
+}
 
 // void Network::check_peers()
 // {

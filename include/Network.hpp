@@ -21,14 +21,13 @@ public:
           shared_ptr<tcp::resolver> _resolver,
 	  Peer& p);
   
-  void add_new_peer(shared_ptr<Peer> p, PeerMap& m);
-  void add_new_peer(shared_ptr<Peer> p) {
-    add_new_peer(p, new_peers);
-  }
+  void add_new_peer(shared_ptr<Peer> p);
 
   void join(string entry_point);
   shared_ptr<Peer> connect_peer(string peer_name);
   
+  void handle_join(shared_ptr<Peer> peer);
+
   const PeerMap get_peers() {
     return peers;
   }

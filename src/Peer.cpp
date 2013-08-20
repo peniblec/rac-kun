@@ -25,7 +25,6 @@ void Peer::init(string _id, string _pub_key) {
 void Peer::start_listening(Peer::Handler _listen_handler)
 {
   listen_handler = _listen_handler;
-  // id = get_address();
   listen();
 }
 
@@ -40,7 +39,6 @@ void Peer::listen()
 void Peer::receive()
 {
     cout << "- " << get_address() << ": " << get_last_message() << endl;
-    // listen();
 }
 
 void Peer::send(string message)

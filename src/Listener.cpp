@@ -35,7 +35,7 @@ void Listener::handle_accept(list<Peer*>::iterator new_peer_it,
 
     pending_peers.erase(new_peer_it);
 
-    DEBUG("Peer at address " << new_peer->get_address() << " has been accepted!");
+    DEBUG("Listener::handle_accept: Now in touch with peer @" << new_peer->get_address() << ".");
 
     start_accept();
   }
