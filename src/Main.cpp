@@ -19,9 +19,9 @@ int main() {
   shared_ptr<asio::io_service> io_service(new asio::io_service);
   shared_ptr<tcp::resolver> resolver(new tcp::resolver(*io_service));
 
-  shared_ptr<tcp::socket> null_ptr;
-  Peer local_peer(null_ptr, true);
+  shared_ptr<Peer> local_peer = create_local_peer();
   shared_ptr<Network> network(new Network(io_service, resolver, local_peer));
+
   Listener listener(io_service, network);
 
   thread io_service_thread(bind(&asio::io_service::run, io_service));
@@ -29,7 +29,8 @@ int main() {
   cout << "What to do?" << endl
        << "send <message> - Send <message> to peers" << endl
        // << "add <address> - Add peer with address <address>" << endl
-       << "join <address> - Join a session using <address> as an entry point" << endl;
+       << "join <address> - Join a session using <address> as an entry point" << endl
+       << "rings - display the constitution of the current rings" << endl;
 
   for(;;) {
 
@@ -49,6 +50,10 @@ int main() {
     else if ( command.compare(COMMAND_JOIN)==0 ) {
 
       network->join(argument);
+    }
+    else if ( command.compare(COMMAND_RINGS)==0 ) {
+
+      network->print_rings();
     }
 
     

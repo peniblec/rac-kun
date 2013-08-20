@@ -26,6 +26,7 @@ public:
   shared_ptr<Peer> get_successor(shared_ptr<Peer> p);
   shared_ptr<Peer> get_predecessor(shared_ptr<Peer> p);
 
+  void display();  
 
 private:
   typedef map<string, shared_ptr<Peer> > RingMap;

@@ -1,3 +1,4 @@
+#include <boost/asio.hpp>
 #include <sstream>
 
 #include "Utils.hpp"
@@ -8,6 +9,25 @@
 #include "ReadyMessage.hpp"
 #include "ReadyNotifMessage.hpp"
 
+using boost::asio::ip::tcp;
+
+
+shared_ptr<Peer> create_local_peer()
+{
+  shared_ptr<tcp::socket> null_ptr;
+  shared_ptr<Peer> local_peer(new Peer(null_ptr, true));
+
+  char name[ID_LENGTH + 1];
+  name[ID_LENGTH] = '\0';
+  // gethostname is not guaranteed to add \0 if it needs to truncate host name
+  gethostname(name, sizeof(name) -1);
+
+  string id(name);
+
+  local_peer->init( id, "AAAAA" );
+
+  return local_peer;
+}
 
 void parse_input(string& input, string& command, string& argument)
 {

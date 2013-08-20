@@ -12,22 +12,11 @@
 
 Network::Network(shared_ptr<asio::io_service> _ios,
                  shared_ptr<tcp::resolver> _resolver,
-                 Peer& p)
+                 shared_ptr<Peer> p)
   : io_service(_ios), resolver(_resolver), local_peer(p)
 {
-  char name[ID_LENGTH + 1];
-  name[ID_LENGTH] = '\0';
-  // gethostname is not guaranteed to add \0 if it needs to truncate host name
-  gethostname(name, sizeof(name) -1);
-
-  string id(name);
-
-  p.init( id, "AAAAA" );
-
-
   for (int i=0; i<RINGS_NB; i++)
     rings[i] = Ring(i);
-
 }
 
 void Network::add_new_peer(shared_ptr<Peer> p)
@@ -39,15 +28,30 @@ void Network::add_new_peer(shared_ptr<Peer> p)
   p->start_listening(listen_handler);
 }
 
+void Network::add_peer_to_rings(shared_ptr<Peer> p)
+{
+  for (int i=0; i<RINGS_NB; i++) {
+
+    rings[i].add_peer(p);
+  }
+  // update pred/succ
+}
+
+// void Network::add_self_to_rings()
+// {
+//   local_peer->set_state(PEER_STATE_CONNECTED);
+//   add_peer_to_rings(local_peer);
+// }
+
 void Network::join(string entry_point)
 {
   shared_ptr<Peer> entry_peer = connect_peer(entry_point);
   entry_peer->set_state(PEER_STATE_CONNECTED);
-  local_peer.set_state(PEER_STATE_JOINING);
+  local_peer->set_state(PEER_STATE_JOINING);
 
   add_new_peer(entry_peer);
   
-  JoinMessage join(local_peer.get_id(), local_peer.get_key());
+  JoinMessage join(local_peer->get_id(), local_peer->get_key());
   entry_peer->send(join.serialize());
 }
 
@@ -107,8 +111,10 @@ void Network::handle_incoming_message(const system::error_code& error,
 
       case MESSAGE_TYPE_JOIN: {
         // if we've been alone so far, consider we constitute a functional network
-        if (local_peer.get_state() != PEER_STATE_CONNECTED)
-          local_peer.set_state(PEER_STATE_CONNECTED);
+        if (local_peer->get_state() != PEER_STATE_CONNECTED) {
+          local_peer->set_state(PEER_STATE_CONNECTED);
+          add_peer_to_rings(local_peer);
+        }
 
         // As the entry point for the emitter, we will
         // - broadcast its join request (as a join notif) to the group
@@ -173,19 +179,25 @@ void Network::handle_incoming_message(const system::error_code& error,
         peers[ emitter->get_id() ] = emitter;
 
         emitter->set_state(PEER_STATE_CONNECTED);
+        
       }
         break;
 
       case MESSAGE_TYPE_READY: {
 
         // time to send READY_NOTIF to everyone, and compute our position on the rings
-        local_peer.set_state(PEER_STATE_READYING);
-
+        local_peer->set_state(PEER_STATE_READYING);
+        // TODO: figure out whether Readying state is useful
+        
         ReadyNotifMessage notif;
         send_all(notif.serialize()); // TODO: send only to direct predecessors/followers
 
-        local_peer.set_state(PEER_STATE_CONNECTED);
-        // TODO: figure out whether Readying state is useful
+        local_peer->set_state(PEER_STATE_CONNECTED);
+        add_peer_to_rings(local_peer);
+        for (PeerMap::iterator it = peers.begin(); it!=peers.end(); it++) {
+
+          add_peer_to_rings(it->second);
+        }
       }
         break;
 
@@ -221,14 +233,28 @@ void Network::handle_join(shared_ptr<Peer> peer)
   joining_peers[ peer->get_id() ] = peer;
   peer->set_state( PEER_STATE_JOINING);
 
+  add_peer_to_rings(peer);
+
   // TODO:
   // - add to rings
+  // - send join ack
   // - if direct pred/succ, wait for READY before setting state to CONNECTED
   // - else, wait for 2T before setting to CONNECTED
 
-  JoinAckMessage ack( local_peer.get_id(), local_peer.get_key() );
+  JoinAckMessage ack( local_peer->get_id(), local_peer->get_key() );
   peer->send( ack.serialize() );
 }
+
+void Network::print_rings()
+{
+  for (int i=0; i<RINGS_NB; i++) {
+
+    rings[i].display();
+    cout << endl;
+  }
+
+}
+
 
 // void Network::check_peers()
 // {
