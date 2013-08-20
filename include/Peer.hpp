@@ -6,7 +6,6 @@
 #include <boost/shared_ptr.hpp>
 
 #include "Config.hpp"
-#include "ReadyMessage.hpp"
 
 using namespace boost;
 using boost::asio::ip::tcp;
@@ -56,8 +55,6 @@ public:
   }
 
   void send(string message);
-  // void send(shared_ptr<Message> message);
-  void get_ready(const system::error_code& error, shared_ptr<ReadyMessage> message);
   
   void finish_write();
 
