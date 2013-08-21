@@ -34,14 +34,26 @@ void Network::add_peer_to_rings(shared_ptr<Peer> p)
 
     rings[i].add_peer(p);
   }
-  // update pred/succ
+  update_my_neighbours();
 }
 
-// void Network::add_self_to_rings()
-// {
-//   local_peer->set_state(PEER_STATE_CONNECTED);
-//   add_peer_to_rings(local_peer);
-// }
+void Network::update_my_neighbours()
+{
+  predecessors.clear();
+  successors.clear();
+
+  try {
+    for (int i=0; i<RINGS_NB; i++) {
+      predecessors.insert( rings[i].get_predecessor( local_peer ) );
+      successors.insert( rings[i].get_successor( local_peer ) );    
+    }
+  }
+  catch (PeerNotFoundException& e) {
+    cout << e.what() << endl;
+    predecessors.clear();
+    successors.clear();
+  }
+}
 
 void Network::join(string entry_point)
 {
@@ -208,8 +220,6 @@ void Network::handle_incoming_message(const system::error_code& error,
       case MESSAGE_TYPE_READY_NOTIF: {
 
         // emitter is now ready to communicate with us: move to regular peers map
-        // joining_peers.erase( emitter->get_id() );
-        // peers[ emitter->get_id() ] = emitter;
 
         emitter->set_state(PEER_STATE_CONNECTED);
       }
@@ -234,7 +244,6 @@ void Network::handle_incoming_message(const system::error_code& error,
 
 void Network::handle_join(shared_ptr<Peer> peer)
 {
-  // joining_peers[ peer->get_id() ] = peer;
   peers[ peer->get_id() ] = peer;
   peer->set_state( PEER_STATE_JOINING);
 
@@ -258,6 +267,14 @@ void Network::print_rings()
     cout << endl;
   }
 
+  cout << "My predecessors are:" << endl;
+  for (PeerSet::iterator it=predecessors.begin(); it!=predecessors.end(); it++) {
+    cout << "- " << (*it)->get_id() << endl;
+  }
+  cout << "My successors are:" << endl;
+  for (PeerSet::iterator it=successors.begin(); it!=successors.end(); it++) {
+    cout << "- " << (*it)->get_id() << endl;
+  }
 }
 
 void Network::broadcast(string msg)
@@ -265,13 +282,3 @@ void Network::broadcast(string msg)
   // LOL
 
 }
-// void Network::check_peers()
-// {
-//   for (uint p=0 ; p<peers.size() ; p++) {
-
-//     while (peers.size() > p  && ! peers[p]->is_alive() ) {
-//       peers.erase( peers.begin()+p );
-//       DEBUG("Removed peer, " << peers.size() << " remaining.");
-//     }
-//   }
-// }
