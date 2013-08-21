@@ -27,10 +27,11 @@ int main() {
   thread io_service_thread(bind(&asio::io_service::run, io_service));
 
   cout << "What to do?" << endl
-       << "send <message> - Send <message> to peers" << endl
+       << "send <message> - Send <message> to all peers" << endl
        // << "add <address> - Add peer with address <address>" << endl
        << "join <address> - Join a session using <address> as an entry point" << endl
-       << "rings - display the constitution of the current rings" << endl;
+       << "rings - display the constitution of the current rings" << endl
+       << "broadcast <message> - use rings to broadcast a message" << endl;
 
   for(;;) {
 
@@ -55,7 +56,10 @@ int main() {
 
       network->print_rings();
     }
+    else if ( command.compare(COMMAND_BCAST)==0 ) {
 
+      network->broadcast(argument);
+    }
     
   }
 

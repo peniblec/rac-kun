@@ -45,6 +45,7 @@ void Network::add_peer_to_rings(shared_ptr<Peer> p)
 
 void Network::join(string entry_point)
 {
+  // TODO: check if not already CONNECTED
   shared_ptr<Peer> entry_peer = connect_peer(entry_point);
   entry_peer->set_state(PEER_STATE_CONNECTED);
   local_peer->set_state(PEER_STATE_JOINING);
@@ -98,7 +99,10 @@ void Network::handle_incoming_message(const system::error_code& error,
 {
   if (error == asio::error::eof) {
     DEBUG("Peer @" << emitter->get_address() << " disconnected.");
-    new_peers.erase( emitter->get_id() );
+    if ( !new_peers.erase( emitter->get_address() ) ) {
+      peers.erase( emitter->get_id() );
+      // TODO: remove from rings
+    }
   }
   else if (error) {
     DEBUG("Network::handle_incoming_message: " << error.message());
@@ -204,8 +208,8 @@ void Network::handle_incoming_message(const system::error_code& error,
       case MESSAGE_TYPE_READY_NOTIF: {
 
         // emitter is now ready to communicate with us: move to regular peers map
-        joining_peers.erase( emitter->get_id() );
-        peers[ emitter->get_id() ] = emitter;
+        // joining_peers.erase( emitter->get_id() );
+        // peers[ emitter->get_id() ] = emitter;
 
         emitter->set_state(PEER_STATE_CONNECTED);
       }
@@ -230,7 +234,8 @@ void Network::handle_incoming_message(const system::error_code& error,
 
 void Network::handle_join(shared_ptr<Peer> peer)
 {
-  joining_peers[ peer->get_id() ] = peer;
+  // joining_peers[ peer->get_id() ] = peer;
+  peers[ peer->get_id() ] = peer;
   peer->set_state( PEER_STATE_JOINING);
 
   add_peer_to_rings(peer);
@@ -255,7 +260,11 @@ void Network::print_rings()
 
 }
 
+void Network::broadcast(string msg)
+{
+  // LOL
 
+}
 // void Network::check_peers()
 // {
 //   for (uint p=0 ; p<peers.size() ; p++) {

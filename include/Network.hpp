@@ -38,6 +38,7 @@ public:
                                shared_ptr<Peer> emitter);
 
   void print_rings();
+  void broadcast(string msg);
 
 private:
   shared_ptr<asio::io_service> io_service;
