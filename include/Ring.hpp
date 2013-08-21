@@ -21,6 +21,7 @@ public:
 
   Ring(int _index = 0);
 
+  string create_key(string id);
   void add_peer(shared_ptr<Peer> p);
 
   shared_ptr<Peer> get_successor(shared_ptr<Peer> p);
@@ -30,6 +31,8 @@ public:
 
 private:
   typedef map<string, shared_ptr<Peer> > RingMap;
+
+  RingMap::iterator find_peer(string id);
 
   int index;
   CryptoPP::SHA1 hash;

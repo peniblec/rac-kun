@@ -6,9 +6,9 @@ Ring::Ring(int _index)
 {
 }
 
-void Ring::add_peer(shared_ptr<Peer> p)
+string Ring::create_key(string id)
 {
-  string concat = p->get_id();
+  string concat = id;
   concat.append(itos(index));
 
   byte digest[CryptoPP::SHA1::DIGESTSIZE+1];
@@ -20,14 +20,19 @@ void Ring::add_peer(shared_ptr<Peer> p)
 
   string key((char*)digest);
 
+  return key;
+}
+
+void Ring::add_peer(shared_ptr<Peer> p)
+{
+  string key = create_key( p->get_id() );
   ring[key] = p;
 }
 
 shared_ptr<Peer> Ring::get_successor(shared_ptr<Peer> p)
 {
-  RingMap::iterator it;
-  it = ring.find( p->get_id() );
-
+  RingMap::iterator it = find_peer( p->get_id() );
+  
   if ( it!= ring.end() ) {
 
     it++;
@@ -39,9 +44,8 @@ shared_ptr<Peer> Ring::get_successor(shared_ptr<Peer> p)
 
 shared_ptr<Peer> Ring::get_predecessor(shared_ptr<Peer> p)
 {
-  RingMap::iterator it;
-  it = ring.find( p->get_id() );
-
+  RingMap::iterator it = find_peer( p->get_id() );
+ 
   if ( it!= ring.end() )
     return ( it != ring.begin() ? (--it)->second : ring.rbegin()->second );
 
@@ -63,4 +67,11 @@ void Ring::display()
     }
     cout << "...)" << endl;
   }
+}
+
+Ring::RingMap::iterator Ring::find_peer(string id) // move throw here?
+{
+  string key = create_key(id);
+  RingMap::iterator it = ring.find(key);
+  return it;
 }
