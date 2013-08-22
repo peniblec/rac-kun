@@ -18,9 +18,13 @@ using namespace boost;
 #endif
 
 shared_ptr<Peer> create_local_peer();
+
 void parse_input(string& input, string& command, string& argument);
+
 string itos(int i);
 
 Message* parse_message(string msg);
+
+string make_hash(string input);
 
 #endif

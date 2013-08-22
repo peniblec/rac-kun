@@ -1,4 +1,5 @@
 #include <boost/asio.hpp>
+#include <cryptopp/sha.h>
 #include <sstream>
 
 #include "Utils.hpp"
@@ -64,6 +65,9 @@ Message* parse_message(string msg)
       string pub_k(msg, JOIN_MSG_KEY_OFFSET, JOIN_MSG_KEY_LENGTH);
 
       JoinMessage* m = new JoinMessage(id, pub_k);
+
+      string stamp(msg, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
+      m->set_stamp(stamp);
     
       return m;
     }
@@ -75,6 +79,9 @@ Message* parse_message(string msg)
       
       JoinNotifMessage* m = new JoinNotifMessage(id, pub_k, ip);
 
+      string stamp(msg, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
+      m->set_stamp(stamp);
+    
       return m;
     }
   case MESSAGE_TYPE_JOIN_ACK:
@@ -84,11 +91,17 @@ Message* parse_message(string msg)
 
       JoinAckMessage* m = new JoinAckMessage(id, pub_k);
     
+      string stamp(msg, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
+      m->set_stamp(stamp);
+    
       return m;
     }
   case MESSAGE_TYPE_READY:
     {
       ReadyMessage* m = new ReadyMessage();
+    
+      string stamp(msg, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
+      m->set_stamp(stamp);
     
       return m;
     }
@@ -96,6 +109,9 @@ Message* parse_message(string msg)
     {
       ReadyNotifMessage* m = new ReadyNotifMessage();
 
+      string stamp(msg, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
+      m->set_stamp(stamp);
+    
       return m;
     }
 
@@ -103,4 +119,20 @@ Message* parse_message(string msg)
     throw MessageParseException();
   }
       
+}
+
+string make_hash(string input)
+{
+  CryptoPP::SHA1 hash;
+
+  byte digest[CryptoPP::SHA1::DIGESTSIZE];
+
+  hash.CalculateDigest( digest, (byte*) input.c_str(), input.size() );
+  // http://www.cryptopp.com/wiki/HexEncoder
+
+  string output((char*)digest, sizeof(digest));
+  // using the (char*, size_t) constructor:
+  // (char*) constructor will truncate after the first null byte
+
+  return output;
 }

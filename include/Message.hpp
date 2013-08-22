@@ -17,15 +17,18 @@ public:
 
   virtual ~Message();
 
-  virtual string serialize() = 0;
+  virtual string serialize();
   virtual void display() = 0;
 
+  void make_stamp(string peer_id);
+  void set_stamp(string _stamp);
 
   const Type get_type();
 
 protected:
   Message(Type _type);
   Type type;
+  string stamp;
 };
 
 

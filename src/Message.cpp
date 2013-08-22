@@ -1,7 +1,8 @@
 #include <iostream>
+#include <ctime>
 
 #include "Message.hpp"
-
+#include "Utils.hpp"
 
 Message::Message(Message::Type _type)
   : type(_type)
@@ -12,17 +13,35 @@ Message::~Message()
 {
 }
 
+void Message::make_stamp(string peer_id)
+{
+  string input = peer_id;
+
+  time_t now;
+  now = time(NULL);
+
+  input.append( itos(now) );
+
+  stamp = make_hash(input);
+}
+
+void Message::set_stamp(string _stamp)
+{
+  stamp = _stamp;
+}
+
 const Message::Type Message::get_type()
 {
   return type;
 }
 
-// string Message::serialize()
-// {
-//   string s;
-//   s.push_back(type);
-//   return s;
-// }
+string Message::serialize()
+{
+  string s;
+  s.push_back(type);
+  s.append(stamp);
+  return s;
+}
 
 // void Message::display()
 // {

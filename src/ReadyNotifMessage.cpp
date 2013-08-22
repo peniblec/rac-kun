@@ -9,8 +9,7 @@ ReadyNotifMessage::ReadyNotifMessage()
 
 string ReadyNotifMessage::serialize()
 {
-  string s;
-  s.push_back(type);
+  string s = Message::serialize();
   return s;
 }
 

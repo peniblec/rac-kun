@@ -2,7 +2,6 @@
 #define RING_H
 
 #include <boost/shared_ptr.hpp>
-#include <cryptopp/sha.h>
 #include <map>
 
 #include "Config.hpp"
@@ -35,7 +34,6 @@ private:
   RingMap::iterator find_peer(string id);
 
   int index;
-  CryptoPP::SHA1 hash;
 
   RingMap ring;
 };

@@ -9,8 +9,7 @@ JoinNotifMessage::JoinNotifMessage(string _id, string _key, string _ip)
 
 string JoinNotifMessage::serialize()
 {
-  string s;
-  s.push_back(type);
+  string s = Message::serialize();
   s.append(id);
   s.append(pub_k);
   s.append(ip);

@@ -38,16 +38,20 @@ enum MessageType {
 
 extern const char* MessageTypeNames[MESSAGE_TYPE_END];
 
-#define ID_LENGTH (13)
 
-#define JOIN_MSG_ID_OFFSET (1)
-#define JOIN_MSG_ID_LENGTH (ID_LENGTH)
+extern const int MSG_STAMP_LENGTH;
+extern const int MSG_STAMP_OFFSET;
 
-#define JOIN_MSG_KEY_OFFSET (JOIN_MSG_ID_OFFSET + JOIN_MSG_ID_LENGTH)
-#define JOIN_MSG_KEY_LENGTH (5)
+extern const int ID_LENGTH;
 
-#define JOIN_NOTIF_IP_OFFSET (JOIN_MSG_KEY_OFFSET + JOIN_MSG_KEY_LENGTH)
+extern const int JOIN_MSG_ID_OFFSET;
+extern const int JOIN_MSG_ID_LENGTH;
 
-#define READY_TIME (5) // seconds
+extern const int JOIN_MSG_KEY_OFFSET;
+extern const int JOIN_MSG_KEY_LENGTH;
+
+extern const int JOIN_NOTIF_IP_OFFSET;
+
+extern const int READY_TIME;
 
 #endif 

@@ -9,8 +9,7 @@ JoinMessage::JoinMessage(string _id, string _key)
 
 string JoinMessage::serialize()
 {
-  string s;
-  s.push_back(type);
+  string s = Message::serialize();
   s.append(id);
   s.append(pub_k);
   return s;

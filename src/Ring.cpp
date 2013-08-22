@@ -11,14 +11,7 @@ string Ring::create_key(string id)
   string concat = id;
   concat.append(itos(index));
 
-  byte digest[CryptoPP::SHA1::DIGESTSIZE+1];
-  // TODO: make sure ID_SIZE <= DIGESTSIZE
-  hash.CalculateDigest( digest, (byte*) concat.c_str(), concat.length() );
-  // http://www.cryptopp.com/wiki/HexEncoder
-
-  digest[CryptoPP::SHA1::DIGESTSIZE] = '\0';
-
-  string key((char*)digest);
+  string key = make_hash(concat);
 
   return key;
 }
@@ -60,16 +53,16 @@ void Ring::display()
   cout << "Ring index: " << index << endl;
   for (it=ring.begin(); it!=ring.end(); it++) {
 
-    cout << it->second->get_id() << " ("
-         << PeerStateNames[it->second->get_state()] << " with key: ";
-    for (uint n=0; n< (it->first.size())/2; n++) {
-        cout << (int) ((unsigned char) it->first[n]) << '|';
+    cout << it->second->get_id() << " " 
+         << PeerStateNames[it->second->get_state()] << " with key: " << endl << "\t";
+    for (uint n=0; n< (it->first.size()); n++) {
+      cout << (int) ((unsigned char) it->first[n]) << (n+1==it->first.size() ? "" : "-");
     }
-    cout << "...)" << endl;
+    cout << " [" << it->first.size() << "]" << endl;
   }
 }
 
-Ring::RingMap::iterator Ring::find_peer(string id) // move throw here?
+Ring::RingMap::iterator Ring::find_peer(string id) // TODO: move throw here?
 {
   string key = create_key(id);
   RingMap::iterator it = ring.find(key);

@@ -65,6 +65,7 @@ void Network::join(string entry_point)
   add_new_peer(entry_peer);
   
   JoinMessage join(local_peer->get_id(), local_peer->get_key());
+  join.make_stamp( local_peer->get_id() );
   entry_peer->send(join.serialize());
 }
 
@@ -98,6 +99,7 @@ void Network::send_ready(const system::error_code& error, shared_ptr<Peer> peer)
   if (!error) {
     peer->set_state(PEER_STATE_READYING);
     ReadyMessage ready;
+    ready.make_stamp( local_peer->get_id() );
     peer->send(ready.serialize());
     ready_timers.erase( peer->get_id() );
   }
@@ -143,6 +145,7 @@ void Network::handle_incoming_message(const system::error_code& error,
         emitter->init( msg->get_id(), msg->get_key() );
 
         JoinNotifMessage notif( msg->get_id(), msg->get_key(), emitter->get_address() );
+        notif.make_stamp( local_peer->get_id() );
 
         send_all(notif.serialize());
 
@@ -206,6 +209,7 @@ void Network::handle_incoming_message(const system::error_code& error,
         // TODO: figure out whether Readying state is useful
         
         ReadyNotifMessage notif;
+        notif.make_stamp( local_peer->get_id() );
         send_all(notif.serialize()); // TODO: send only to direct predecessors/followers
 
         local_peer->set_state(PEER_STATE_CONNECTED);
@@ -256,6 +260,7 @@ void Network::handle_join(shared_ptr<Peer> peer)
   // - else, wait for 2T before setting to CONNECTED
 
   JoinAckMessage ack( local_peer->get_id(), local_peer->get_key() );
+  ack.make_stamp( local_peer->get_id() );
   peer->send( ack.serialize() );
 }
 

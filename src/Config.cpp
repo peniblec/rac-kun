@@ -1,3 +1,5 @@
+#include <cryptopp/sha.h>
+
 #include "Config.hpp"
 
 const char* PeerStateNames[PEER_STATE_END] =
@@ -18,3 +20,18 @@ const char* MessageTypeNames[MESSAGE_TYPE_END] =
     "Ready Notification",
     "Data"
   };
+
+extern const int MSG_STAMP_LENGTH = CryptoPP::SHA1::DIGESTSIZE;
+extern const int MSG_STAMP_OFFSET = 1;
+
+extern const int ID_LENGTH = 13;
+
+extern const int JOIN_MSG_ID_OFFSET = MSG_STAMP_OFFSET + MSG_STAMP_LENGTH;
+extern const int JOIN_MSG_ID_LENGTH = ID_LENGTH;
+
+extern const int JOIN_MSG_KEY_OFFSET = JOIN_MSG_ID_OFFSET + JOIN_MSG_ID_LENGTH;
+extern const int JOIN_MSG_KEY_LENGTH = 5;
+
+extern const int JOIN_NOTIF_IP_OFFSET = JOIN_MSG_KEY_OFFSET + JOIN_MSG_KEY_LENGTH;
+
+extern const int READY_TIME = 5; // seconds
