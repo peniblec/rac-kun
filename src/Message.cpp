@@ -16,12 +16,12 @@ Message::~Message()
 void Message::make_stamp(string peer_id)
 {
   string input = peer_id;
-  // TODO: sane timestamp!!
+
   struct timeval tv;
   gettimeofday(&tv, NULL);
-  int now = (tv.tv_sec*1000 + tv.tv_usec/1000);
+  long now = (tv.tv_sec*1000 + tv.tv_usec/1000);
 
-  input.append( itos(now) );
+  input.append( ltos(now) );
 
   stamp = make_hash(input);
 }

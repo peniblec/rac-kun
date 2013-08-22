@@ -22,6 +22,7 @@ shared_ptr<Peer> create_local_peer();
 void parse_input(string& input, string& command, string& argument);
 
 string itos(int i);
+string ltos(long l);
 
 Message* parse_message(string msg);
 

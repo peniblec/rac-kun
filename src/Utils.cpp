@@ -54,6 +54,15 @@ string itos(int i)
   return ret;
 }
 
+string ltos(long l)
+{
+  stringstream ss;
+  ss << l;
+  string ret = ss.str();
+  return ret;
+}
+
+
 Message* parse_message(string msg)
 {
   Message::Type msg_type = (Message::Type)msg[0];
