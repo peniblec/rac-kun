@@ -1,5 +1,5 @@
 #include <iostream>
-#include <ctime>
+#include <sys/time.h>
 
 #include "Message.hpp"
 #include "Utils.hpp"
@@ -16,9 +16,10 @@ Message::~Message()
 void Message::make_stamp(string peer_id)
 {
   string input = peer_id;
-
-  time_t now;
-  now = time(NULL);
+  // TODO: sane timestamp!!
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  int now = (tv.tv_sec*1000 + tv.tv_usec/1000);
 
   input.append( itos(now) );
 

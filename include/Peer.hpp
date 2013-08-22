@@ -14,7 +14,7 @@ class Peer
 {
 public:
   typedef PeerState State;
-  typedef function<void (const system::error_code&)> Handler;
+  typedef function<void (const system::error_code&, size_t)> Handler;
   
 
   Peer(shared_ptr<tcp::socket> _socket, bool _local = false);
@@ -49,8 +49,8 @@ public:
     return state;
   }
 
-  const string get_last_message() {
-    string ret(last_message);
+  const string get_last_message(size_t len = 0) {
+    string ret = ( len ? string(last_message, len) : string(last_message) );
     return ret;
   }
 

@@ -33,7 +33,9 @@ void Peer::listen()
   memset(last_message, 0, MESSAGE_SIZE);
     
   socket->async_read_some(asio::buffer(last_message),
-                          bind(listen_handler, asio::placeholders::error));
+                          bind(listen_handler,
+                               asio::placeholders::error,
+                               asio::placeholders::bytes_transferred));
 }
 
 void Peer::receive()
@@ -44,6 +46,20 @@ void Peer::receive()
 void Peer::send(string message)
 {
   // TODO: limit buffer size to MESSAGE_SIZE, loop until whole is sent
+
+  // DEBUG
+
+  // if ((int) message[0] < MESSAGE_TYPE_END) {
+
+  //   DEBUG("Sending a " << MessageTypeNames[(int)message[0]] << " of size " << message.size());
+
+  //   for (uint n=0; n< (message.size()); n++)
+  //     cout << (int) ((unsigned char) message[n]) << (n+1==message.size() ? "" : "-");
+  //   cout << endl;
+  // }
+  // /DEBUG
+
+
   socket->async_write_some(asio::buffer(message),
                            bind(&Peer::finish_write, this));
 }

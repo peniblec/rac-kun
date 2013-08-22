@@ -24,7 +24,8 @@ void Network::add_new_peer(shared_ptr<Peer> p)
   new_peers[ p->get_address() ] = p;
 
   Peer::Handler listen_handler = bind(&Network::handle_incoming_message, this,
-                                      asio::placeholders::error, p);
+                                      asio::placeholders::error,
+                                      asio::placeholders::bytes_transferred, p);
   p->start_listening(listen_handler);
 }
 
@@ -85,7 +86,7 @@ shared_ptr<Peer> Network::connect_peer(string peer_name)
 
 void Network::send_all(string message)
 {
-  DEBUG("Sending \"" << message << "\" to " << peers.size() << " peers.");
+  // DEBUG("Sending \"" << message << "\" to " << peers.size() << " peers.");
 
   PeerMap::iterator it;
   for (it=peers.begin(); it!=peers.end(); it++) {
@@ -109,6 +110,7 @@ void Network::send_ready(const system::error_code& error, shared_ptr<Peer> peer)
 }
 
 void Network::handle_incoming_message(const system::error_code& error,
+                                      size_t bytes_transferred,
                                       shared_ptr<Peer> emitter)
 {
   if (error == asio::error::eof) {
@@ -123,7 +125,7 @@ void Network::handle_incoming_message(const system::error_code& error,
   }
   else {
     try {
-      Message* message = parse_message(emitter->get_last_message());
+      Message* message = parse_message(emitter->get_last_message(bytes_transferred));
 
       switch (message->get_type()) {
 
@@ -179,7 +181,9 @@ void Network::handle_incoming_message(const system::error_code& error,
         handle_join(new_peer);
 
         Peer::Handler listen_handler = bind(&Network::handle_incoming_message, this,
-                                            asio::placeholders::error, new_peer);
+                                            asio::placeholders::error,
+                                            asio::placeholders::bytes_transferred,
+                                            new_peer);
         new_peer->start_listening(listen_handler);
         
       }
@@ -233,14 +237,19 @@ void Network::handle_incoming_message(const system::error_code& error,
         throw MessageParseException();
       }
 
-      DEBUG("Peer " << emitter->get_id() << " sent a "
-            << MessageTypeNames[ message->get_type() ] << ":");
-      message->display();
+      // DEBUG("Peer " << emitter->get_id() << " sent a "
+      //       << MessageTypeNames[ message->get_type() ] << ":");
+      // message->display();
       
       delete message;
     }
     catch (MessageParseException& e) {
-      DEBUG("Couldn't make sense of this: " << emitter->get_last_message());
+      DEBUG("Couldn't make sense of this:");
+      cout << "\t";
+      string buffer = emitter->get_last_message(bytes_transferred);
+      for (uint n=0; n< (buffer.size()); n++)
+        cout << (int) ((unsigned char) buffer[n]) << (n+1==buffer.size() ? "" : "-");
+      cout << endl;
     }
     emitter->listen();
   }  

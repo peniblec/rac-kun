@@ -57,6 +57,20 @@ string itos(int i)
 Message* parse_message(string msg)
 {
   Message::Type msg_type = (Message::Type)msg[0];
+  
+  // DEBUG
+
+  // if (msg_type < MESSAGE_TYPE_END) {
+
+  //   DEBUG("Receiving a " << MessageTypeNames[msg_type] << " of size " << msg.size());
+
+  //   for (uint n=0; n< (msg.size()); n++)
+  //     cout << (int) ((unsigned char) msg[n]) << (n+1==msg.size() ? "" : "-");
+  //   cout << endl;
+  // }
+  // /DEBUG
+
+  Message* m;
 
   switch (msg_type) {
   case MESSAGE_TYPE_JOIN:
@@ -64,61 +78,43 @@ Message* parse_message(string msg)
       string id(msg, JOIN_MSG_ID_OFFSET, JOIN_MSG_ID_LENGTH);
       string pub_k(msg, JOIN_MSG_KEY_OFFSET, JOIN_MSG_KEY_LENGTH);
 
-      JoinMessage* m = new JoinMessage(id, pub_k);
-
-      string stamp(msg, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
-      m->set_stamp(stamp);
-    
-      return m;
+      m = new JoinMessage(id, pub_k);
     }
+    break;
   case MESSAGE_TYPE_JOIN_NOTIF:
     {
       string id(msg, JOIN_MSG_ID_OFFSET, JOIN_MSG_ID_LENGTH);
       string pub_k(msg, JOIN_MSG_KEY_OFFSET, JOIN_MSG_KEY_LENGTH);
       string ip(msg, JOIN_NOTIF_IP_OFFSET);
       
-      JoinNotifMessage* m = new JoinNotifMessage(id, pub_k, ip);
-
-      string stamp(msg, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
-      m->set_stamp(stamp);
-    
-      return m;
+      m = new JoinNotifMessage(id, pub_k, ip);
     }
+    break;
   case MESSAGE_TYPE_JOIN_ACK:
     {
       string id(msg, JOIN_MSG_ID_OFFSET, JOIN_MSG_ID_LENGTH);
       string pub_k(msg, JOIN_MSG_KEY_OFFSET, JOIN_MSG_KEY_LENGTH);
 
-      JoinAckMessage* m = new JoinAckMessage(id, pub_k);
-    
-      string stamp(msg, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
-      m->set_stamp(stamp);
-    
-      return m;
+      m = new JoinAckMessage(id, pub_k);
     }
+    break;
   case MESSAGE_TYPE_READY:
     {
-      ReadyMessage* m = new ReadyMessage();
-    
-      string stamp(msg, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
-      m->set_stamp(stamp);
-    
-      return m;
+      m = new ReadyMessage();
     }
+    break;
   case MESSAGE_TYPE_READY_NOTIF:
     {
-      ReadyNotifMessage* m = new ReadyNotifMessage();
-
-      string stamp(msg, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
-      m->set_stamp(stamp);
-    
-      return m;
+      m = new ReadyNotifMessage();
     }
-
+    break;
   default:
     throw MessageParseException();
   }
-      
+  string stamp(msg, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
+  m->set_stamp(stamp);
+
+  return m;
 }
 
 string make_hash(string input)

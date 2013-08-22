@@ -36,6 +36,7 @@ public:
   void send_ready(const system::error_code& error, shared_ptr<Peer> peer);
 
   void handle_incoming_message(const system::error_code& error,
+                               size_t bytes_transferred,
                                shared_ptr<Peer> emitter);
 
   void print_rings();
