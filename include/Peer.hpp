@@ -54,6 +54,10 @@ public:
     return ret;
   }
 
+  bool is_local() {
+    return local;
+  }
+
   void send(string message);
   
   void finish_write();

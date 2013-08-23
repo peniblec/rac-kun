@@ -79,6 +79,8 @@ public:
 
   void send_all(string message);
 
+  void send(string message, shared_ptr<Peer> peer);
+
   void send_ready(const system::error_code& error, shared_ptr<Peer> peer);
 
   void handle_incoming_message(const system::error_code& error,
@@ -91,7 +93,7 @@ public:
 
   void print_logs();
 
-  void init_log(MessageLog& mlog);
+  void log_message(string message, shared_ptr<Peer> emitter);
 
 private:
 

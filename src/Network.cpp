@@ -66,7 +66,7 @@ void Network::join(string entry_point)
   
   JoinMessage join(local_peer->get_id(), local_peer->get_key());
   join.make_stamp( local_peer->get_id() );
-  entry_peer->send(join.serialize());
+  send( join.serialize(), entry_peer );
 }
 
 shared_ptr<Peer> Network::connect_peer(string peer_name)
@@ -90,8 +90,14 @@ void Network::send_all(string message)
   PeerMap::iterator it;
   for (it=peers.begin(); it!=peers.end(); it++) {
 
-    it->second->send(message);
+    send(message, it->second);
   }
+}
+
+void Network::send(string message, shared_ptr<Peer> peer)
+{
+  peer->send(message);
+  log_message(message, local_peer);
 }
 
 void Network::send_ready(const system::error_code& error, shared_ptr<Peer> peer)
@@ -100,7 +106,7 @@ void Network::send_ready(const system::error_code& error, shared_ptr<Peer> peer)
     peer->set_state(PEER_STATE_READYING);
     ReadyMessage ready;
     ready.make_stamp( local_peer->get_id() );
-    peer->send(ready.serialize());
+    send(ready.serialize(), peer);
     ready_timers.erase( peer->get_id() );
   }
   else {
@@ -239,21 +245,8 @@ void Network::handle_incoming_message(const system::error_code& error,
         throw MessageParseException();
       }
 
-      MessageLog ml;
-      ml.message = received_message;
+      log_message(received_message, emitter);
 
-      LogIndexHash& index = logs.get<LOG_INDEX_HASH>();
-      LogIndexHash::iterator it = index.find(ml);
-
-      if ( it==index.end() ) {
-        // initialize predecessors
-        init_log(ml);
-        pair<LogIndexHash::iterator, bool> pair = index.insert( ml );
-        if (pair.second)
-          it = pair.first;
-      }
-      if ( it!=index.end() )
-        index.modify(it, ack_message(emitter));
 
       delete message;
     }
@@ -284,7 +277,7 @@ void Network::handle_join(shared_ptr<Peer> peer)
 
   JoinAckMessage ack( local_peer->get_id(), local_peer->get_key() );
   ack.make_stamp( local_peer->get_id() );
-  peer->send( ack.serialize() );
+  send(ack.serialize(), peer);
 }
 
 void Network::print_rings()
@@ -313,25 +306,43 @@ void Network::broadcast(string msg)
 
 void Network::print_logs()
 {
-    Message* m = NULL;
-    LogIndexTime& index = logs.get<LOG_INDEX_TIME>();
+  cout << "Logs are " << sizeof(logs) << " bytes for "
+       << logs.size() << " elements." << endl;
+  Message* m = NULL;
+  LogIndexTime& index = logs.get<LOG_INDEX_TIME>();
 
-    for (LogIndexTime::iterator it=index.begin(); it!=index.end(); it++) {
-      m = parse_message( it->message );
-      cout << "Received a " << MessageTypeNames[ m->get_type() ] << endl;
-      map<string, int> preds = it->control;
-      for (map<string, int>::iterator jt=preds.begin(); jt!=preds.end(); jt++) {
-        cout << "- " << jt->first << ": " << jt->second << endl;
-      }
+  for (LogIndexTime::iterator it=index.begin(); it!=index.end(); it++) {
+    m = parse_message( it->message );
+    cout << "Received/sent a " << MessageTypeNames[ m->get_type() ] << endl;
+    map<string, int> preds = it->control;
+    for (map<string, int>::iterator jt=preds.begin(); jt!=preds.end(); jt++) {
+      cout << "- " << jt->first << ": " << jt->second << endl;
     }
-    if (m)
-      delete m;
+  }
+  if (m)
+    delete m;
 }
 
-void Network::init_log(MessageLog& mlog)
+void Network::log_message(string message, shared_ptr<Peer> emitter)
 {
-  for (PeerSet::iterator it=predecessors.begin(); it!=predecessors.end(); it++)
-    mlog.control[ (*it)->get_id() ] = 0;
+  MessageLog ml;
+  ml.message = message;
+
+  LogIndexHash& index = logs.get<LOG_INDEX_HASH>();
+  LogIndexHash::iterator it = index.find(ml);
+
+  if ( it==index.end() ) {
+    // initialize predecessors
+
+    for (PeerSet::iterator p=predecessors.begin(); p!=predecessors.end(); p++)
+      ml.control[ (*p)->get_id() ] = 0;
+
+    pair<LogIndexHash::iterator, bool> pair = index.insert( ml );
+    if (pair.second)
+      it = pair.first;
+  }
+  if ( !emitter->is_local() && it!=index.end() )
+    index.modify(it, ack_message(emitter));
 }
 
 
