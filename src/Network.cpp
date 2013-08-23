@@ -115,9 +115,11 @@ void Network::handle_incoming_message(const system::error_code& error,
 {
   if (error == asio::error::eof) {
     DEBUG("Peer @" << emitter->get_address() << " disconnected.");
-    if ( !new_peers.erase( emitter->get_address() ) ) {
-      peers.erase( emitter->get_id() );
+    if ( peers.erase( emitter->get_id() ) ) {
       // TODO: remove from rings
+    }
+    else {
+      new_peers.erase( emitter->get_address() );
     }
   }
   else if (error) {
@@ -125,7 +127,8 @@ void Network::handle_incoming_message(const system::error_code& error,
   }
   else {
     try {
-      Message* message = parse_message(emitter->get_last_message(bytes_transferred));
+      string received_message = emitter->get_last_message(bytes_transferred);
+      Message* message = parse_message(received_message);
 
       switch (message->get_type()) {
 
@@ -159,7 +162,7 @@ void Network::handle_incoming_message(const system::error_code& error,
         ready_timers[ emitter->get_id() ] = t;
 
         t->async_wait( bind(&Network::send_ready, this,
-                           asio::placeholders::error, emitter) );
+                            asio::placeholders::error, emitter) );
 
       }
         break;
@@ -240,11 +243,25 @@ void Network::handle_incoming_message(const system::error_code& error,
       // DEBUG("Peer " << emitter->get_id() << " sent a "
       //       << MessageTypeNames[ message->get_type() ] << ":");
       // message->display();
-      
+
+      MessageLog ml;
+      ml.message = received_message;
+      LogHashIterator it = logs.get<LOG_INDEX_HASH>().find(ml);
+
+      if ( it!=logs.get<LOG_INDEX_HASH>().end() ) {
+        // add 1 to emitter's count
+        DEBUG("Already had this message!");
+      }
+      else {
+        // initialize predecessors, add 1 to emitter' count
+        ml.emitter = emitter;
+        logs.get<LOG_INDEX_HASH>().insert( ml );
+      }
+
       delete message;
     }
     catch (MessageParseException& e) {
-      DEBUG("Couldn't make sense of this:");
+      cout << "Couldn't make sense of this:" << endl;
       cout << "\t";
       string buffer = emitter->get_last_message(bytes_transferred);
       for (uint n=0; n< (buffer.size()); n++)
@@ -295,4 +312,13 @@ void Network::broadcast(string msg)
 {
   // LOL
 
+}
+
+void Network::print_logs()
+{
+  for (LogTimeIterator it=logs.begin(); it!=logs.end(); it++) {
+    Message* m = parse_message( it->message );
+    cout << "Received a " << MessageTypeNames[ m->get_type() ]
+         << " from peer " << it->emitter->get_id() << endl;
+  }
 }

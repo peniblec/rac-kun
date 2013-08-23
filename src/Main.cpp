@@ -30,8 +30,9 @@ int main() {
        << "send <message> - Send <message> to all peers" << endl
        // << "add <address> - Add peer with address <address>" << endl
        << "join <address> - Join a session using <address> as an entry point" << endl
-       << "rings - display the constitution of the current rings" << endl
-       << "broadcast <message> - use rings to broadcast a message" << endl;
+       << "rings -  the constitution of the current rings" << endl
+       // << "broadcast <message> - Use rings to broadcast a message" << endl;
+       << "logs - Print all the messages received up until now" << endl;
 
   for(;;) {
 
@@ -56,9 +57,13 @@ int main() {
 
       network->print_rings();
     }
-    else if ( command.compare(COMMAND_BCAST)==0 ) {
+    // else if ( command.compare(COMMAND_BCAST)==0 ) {
 
-      network->broadcast(argument);
+    //   network->broadcast(argument);
+    // }
+    else if ( command.compare(COMMAND_LOGS)==0 ) {
+
+      network->print_logs();
     }
     
   }
