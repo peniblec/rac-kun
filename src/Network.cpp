@@ -60,7 +60,6 @@ void Network::join(string entry_point)
 {
   // TODO: check if not already CONNECTED
   shared_ptr<Peer> entry_peer = connect_peer(entry_point);
-  entry_peer->set_state(PEER_STATE_CONNECTED);
   local_peer->set_state(PEER_STATE_JOINING);
 
   add_new_peer(entry_peer);
@@ -240,23 +239,21 @@ void Network::handle_incoming_message(const system::error_code& error,
         throw MessageParseException();
       }
 
-      // DEBUG("Peer " << emitter->get_id() << " sent a "
-      //       << MessageTypeNames[ message->get_type() ] << ":");
-      // message->display();
-
       MessageLog ml;
       ml.message = received_message;
-      LogHashIterator it = logs.get<LOG_INDEX_HASH>().find(ml);
 
-      if ( it!=logs.get<LOG_INDEX_HASH>().end() ) {
-        // add 1 to emitter's count
-        DEBUG("Already had this message!");
+      LogIndexHash& index = logs.get<LOG_INDEX_HASH>();
+      LogIndexHash::iterator it = index.find(ml);
+
+      if ( it==index.end() ) {
+        // initialize predecessors
+        init_log(ml);
+        pair<LogIndexHash::iterator, bool> pair = index.insert( ml );
+        if (pair.second)
+          it = pair.first;
       }
-      else {
-        // initialize predecessors, add 1 to emitter' count
-        ml.emitter = emitter;
-        logs.get<LOG_INDEX_HASH>().insert( ml );
-      }
+      if ( it!=index.end() )
+        index.modify(it, ack_message(emitter));
 
       delete message;
     }
@@ -316,9 +313,25 @@ void Network::broadcast(string msg)
 
 void Network::print_logs()
 {
-  for (LogTimeIterator it=logs.begin(); it!=logs.end(); it++) {
-    Message* m = parse_message( it->message );
-    cout << "Received a " << MessageTypeNames[ m->get_type() ]
-         << " from peer " << it->emitter->get_id() << endl;
-  }
+    Message* m = NULL;
+    LogIndexTime& index = logs.get<LOG_INDEX_TIME>();
+
+    for (LogIndexTime::iterator it=index.begin(); it!=index.end(); it++) {
+      m = parse_message( it->message );
+      cout << "Received a " << MessageTypeNames[ m->get_type() ] << endl;
+      map<string, int> preds = it->control;
+      for (map<string, int>::iterator jt=preds.begin(); jt!=preds.end(); jt++) {
+        cout << "- " << jt->first << ": " << jt->second << endl;
+      }
+    }
+    if (m)
+      delete m;
 }
+
+void Network::init_log(MessageLog& mlog)
+{
+  for (PeerSet::iterator it=predecessors.begin(); it!=predecessors.end(); it++)
+    mlog.control[ (*it)->get_id() ] = 0;
+}
+
+

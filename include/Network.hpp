@@ -23,6 +23,43 @@ using boost::asio::ip::tcp;
 
 class Network
 {
+private:
+  typedef map<string, shared_ptr<Peer> > PeerMap;
+  typedef set<shared_ptr<Peer> > PeerSet;  
+
+  struct MessageLog {
+    string message;
+    map<string, int> control;
+
+    bool operator<(const MessageLog ml)const {
+      string my_stamp(message, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
+      string its_stamp(ml.message, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
+      return my_stamp<its_stamp;
+    }
+  };
+
+  struct ack_message {
+    ack_message(shared_ptr<Peer> _peer)
+      : peer(_peer) {}
+
+    void operator() (MessageLog& ml) {
+      (ml.control[ peer->get_id() ])++;
+    }
+  private:
+    shared_ptr<Peer> peer;
+  };
+
+  typedef multi_index_container<
+    MessageLog,
+    indexed_by<
+      sequenced<>,
+      ordered_unique<identity<MessageLog> >
+      >
+    > History;
+  typedef History::nth_index<LOG_INDEX_TIME>::type LogIndexTime;
+  typedef History::nth_index<LOG_INDEX_HASH>::type LogIndexHash;
+
+
 public:
   Network(shared_ptr<asio::io_service> _ios,
           shared_ptr<tcp::resolver> _resolver,
@@ -54,30 +91,9 @@ public:
 
   void print_logs();
 
+  void init_log(MessageLog& mlog);
+
 private:
-  typedef map<string, shared_ptr<Peer> > PeerMap;
-  typedef set<shared_ptr<Peer> > PeerSet;  
-
-  struct MessageLog {
-    string message;
-    // map< string, pair<shared_ptr<Peer>, int> > emitters;
-    shared_ptr<Peer> emitter;
-
-    bool operator<(const MessageLog ml)const {
-      string my_stamp(message, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
-      string its_stamp(ml.message, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
-      return my_stamp<its_stamp;
-    }
-  };
-  typedef multi_index_container<
-    MessageLog,
-    indexed_by<
-      sequenced<>,
-      ordered_unique<identity<MessageLog> >
-      >
-    > History;
-  typedef History::nth_index<LOG_INDEX_TIME>::type::iterator LogTimeIterator;
-  typedef History::nth_index<LOG_INDEX_HASH>::type::iterator LogHashIterator;
 
   shared_ptr<asio::io_service> io_service;
   shared_ptr<tcp::resolver> resolver;
