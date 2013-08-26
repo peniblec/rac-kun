@@ -11,6 +11,7 @@
 #include <set>
 
 #include "Config.hpp"
+#include "Message.hpp"
 #include "Peer.hpp"
 #include "Ring.hpp"
 
@@ -77,9 +78,10 @@ public:
   
   void handle_join(shared_ptr<Peer> peer);
 
+  void send_all(Message* message);
   void send_all(string message);
 
-  void send(string message, shared_ptr<Peer> peer);
+  void send(Message* message, shared_ptr<Peer> peer);
 
   void send_ready(const system::error_code& error, shared_ptr<Peer> peer);
 

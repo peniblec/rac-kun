@@ -64,9 +64,8 @@ void Network::join(string entry_point)
 
   add_new_peer(entry_peer);
   
-  JoinMessage join(local_peer->get_id(), local_peer->get_key());
-  join.make_stamp( local_peer->get_id() );
-  send( join.serialize(), entry_peer );
+  Message* join = new JoinMessage(local_peer->get_id(), local_peer->get_key());
+  send( join, entry_peer );
 }
 
 shared_ptr<Peer> Network::connect_peer(string peer_name)
@@ -85,28 +84,46 @@ shared_ptr<Peer> Network::connect_peer(string peer_name)
 
 void Network::send_all(string message)
 {
+  DEBUG("\tSending cleartext to all peers...");
+  PeerMap::iterator it;
+  for (it=peers.begin(); it!=peers.end(); it++) {
+
+    it->second->send(message);
+  }
+}
+
+void Network::send_all(Message* message)
+{
   // DEBUG("Sending \"" << message << "\" to " << peers.size() << " peers.");
+  message->make_stamp( local_peer->get_id() );
+  string msg(message->serialize());
 
   PeerMap::iterator it;
   for (it=peers.begin(); it!=peers.end(); it++) {
 
-    send(message, it->second);
+    it->second->send(msg);
   }
+  log_message(msg, local_peer);
+  delete message;
 }
 
-void Network::send(string message, shared_ptr<Peer> peer)
+void Network::send(Message* message, shared_ptr<Peer> peer)
 {
-  peer->send(message);
-  log_message(message, local_peer);
+  message->make_stamp( local_peer->get_id() );
+  string msg(message->serialize());
+
+  peer->send(msg);
+  log_message(msg, local_peer);
+  delete message;
 }
 
 void Network::send_ready(const system::error_code& error, shared_ptr<Peer> peer)
 {
   if (!error) {
     peer->set_state(PEER_STATE_READYING);
-    ReadyMessage ready;
-    ready.make_stamp( local_peer->get_id() );
-    send(ready.serialize(), peer);
+    Message* ready = new ReadyMessage();
+
+    send(ready, peer);
     ready_timers.erase( peer->get_id() );
   }
   else {
@@ -135,6 +152,9 @@ void Network::handle_incoming_message(const system::error_code& error,
       string received_message = emitter->get_last_message(bytes_transferred);
       Message* message = parse_message(received_message);
 
+      if (emitter->is_known())
+        log_message(received_message, emitter);
+
       switch (message->get_type()) {
 
       case MESSAGE_TYPE_JOIN: {
@@ -153,11 +173,11 @@ void Network::handle_incoming_message(const system::error_code& error,
         JoinMessage* msg = dynamic_cast<JoinMessage*>(message);
 
         emitter->init( msg->get_id(), msg->get_key() );
+        log_message(received_message, emitter);
 
-        JoinNotifMessage notif( msg->get_id(), msg->get_key(), emitter->get_address() );
-        notif.make_stamp( local_peer->get_id() );
+        Message* notif = new JoinNotifMessage( msg->get_id(), msg->get_key(), emitter->get_address() );
 
-        send_all(notif.serialize());
+        send_all(notif);
 
         new_peers.erase( emitter->get_address() );
         handle_join(emitter);
@@ -220,9 +240,8 @@ void Network::handle_incoming_message(const system::error_code& error,
         local_peer->set_state(PEER_STATE_READYING);
         // TODO: figure out whether Readying state is useful
         
-        ReadyNotifMessage notif;
-        notif.make_stamp( local_peer->get_id() );
-        send_all(notif.serialize()); // TODO: send only to direct predecessors/followers
+        Message* notif = new ReadyNotifMessage();
+        send_all(notif); // TODO: send only to direct predecessors/followers
 
         local_peer->set_state(PEER_STATE_CONNECTED);
         add_peer_to_rings(local_peer);
@@ -244,9 +263,6 @@ void Network::handle_incoming_message(const system::error_code& error,
       default: 
         throw MessageParseException();
       }
-
-      log_message(received_message, emitter);
-
 
       delete message;
     }
@@ -275,9 +291,8 @@ void Network::handle_join(shared_ptr<Peer> peer)
   // - if direct pred/succ, wait for READY before setting state to CONNECTED
   // - else, wait for 2T before setting to CONNECTED
 
-  JoinAckMessage ack( local_peer->get_id(), local_peer->get_key() );
-  ack.make_stamp( local_peer->get_id() );
-  send(ack.serialize(), peer);
+  Message* ack = new JoinAckMessage( local_peer->get_id(), local_peer->get_key() );
+  send(ack, peer);
 }
 
 void Network::print_rings()

@@ -54,6 +54,10 @@ public:
     return ret;
   }
 
+  bool is_known() {
+    return (state != PEER_STATE_NEW);
+  }
+
   bool is_local() {
     return local;
   }
