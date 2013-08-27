@@ -79,12 +79,17 @@ public:
   
   void handle_join(shared_ptr<Peer> peer);
 
-  void send_all(Message* message);
+  void broadcast(Message* message, bool add_stamp=false);
+
+  // void send_all(Message* message);
+
   void send_all(string message);
 
   void send(Message* message, shared_ptr<Peer> peer);
 
   void send_ready(const system::error_code& error, shared_ptr<Peer> peer);
+
+  void complete_join(const system::error_code& error, shared_ptr<Peer> peer);
 
   void handle_incoming_message(const system::error_code& error,
                                size_t bytes_transferred,
@@ -92,13 +97,13 @@ public:
 
   void print_rings();
 
-  void broadcast(string msg);
-
   void print_logs();
 
   void log_message(Message* message, shared_ptr<Peer> emitter);
 
 private:
+
+  LogIndexHash::iterator find_log(Message* message);
 
   shared_ptr<asio::io_service> io_service;
   shared_ptr<tcp::resolver> resolver;
@@ -112,9 +117,12 @@ private:
   PeerSet successors;
 
   History logs; // sorted with Message.stamp
+  LogIndexHash& h_logs;
+  LogIndexTime& t_logs;
 
   map<string, shared_ptr<asio::deadline_timer> > ready_timers;
-
+  map<string, shared_ptr<asio::deadline_timer> > join_timers;
+  
   Ring rings[RINGS_NB];
   
 };

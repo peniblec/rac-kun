@@ -13,7 +13,8 @@
 Network::Network(shared_ptr<asio::io_service> _ios,
                  shared_ptr<tcp::resolver> _resolver,
                  shared_ptr<Peer> p)
-  : io_service(_ios), resolver(_resolver), local_peer(p)
+  : io_service(_ios), resolver(_resolver), local_peer(p),
+    h_logs( logs.get<LOG_INDEX_HASH>() ), t_logs( logs.get<LOG_INDEX_TIME>() )
 {
   for (int i=0; i<RINGS_NB; i++)
     rings[i] = Ring(i);
@@ -67,6 +68,7 @@ void Network::join(string entry_point)
   
   Message* join = new JoinMessage(local_peer->get_id(), local_peer->get_key());
   send( join, entry_peer );
+  delete join;
 }
 
 shared_ptr<Peer> Network::connect_peer(string peer_name)
@@ -83,6 +85,20 @@ shared_ptr<Peer> Network::connect_peer(string peer_name)
   return new_peer;
 }
 
+void Network::broadcast(Message* message, bool add_stamp)
+{
+  if (add_stamp)
+    message->make_stamp( local_peer->get_id() );
+  string msg(message->serialize());
+
+  PeerSet::iterator it;
+  for (it=successors.begin(); it!=successors.end(); it++) {
+
+    (*it)->send(msg);
+  }
+  log_message( message, local_peer );
+}
+
 void Network::send_all(string message)
 {
   DEBUG("\tSending cleartext to all peers...");
@@ -93,19 +109,18 @@ void Network::send_all(string message)
   }
 }
 
-void Network::send_all(Message* message)
-{
-  message->make_stamp( local_peer->get_id() );
-  string msg(message->serialize());
+// void Network::send_all(Message* message)
+// {
+//   message->make_stamp( local_peer->get_id() );
+//   string msg(message->serialize());
 
-  PeerMap::iterator it;
-  for (it=peers.begin(); it!=peers.end(); it++) {
+//   PeerMap::iterator it;
+//   for (it=peers.begin(); it!=peers.end(); it++) {
 
-    it->second->send(msg);
-  }
-  log_message(message, local_peer);
-  delete message;
-}
+//     it->second->send(msg);
+//   }
+//   log_message(message, local_peer);
+// }
 
 void Network::send(Message* message, shared_ptr<Peer> peer)
 {
@@ -114,20 +129,31 @@ void Network::send(Message* message, shared_ptr<Peer> peer)
 
   peer->send(msg);
   log_message(message, local_peer);
-  delete message;
 }
 
 void Network::send_ready(const system::error_code& error, shared_ptr<Peer> peer)
 {
   if (!error) {
-    peer->set_state(PEER_STATE_READYING);
     Message* ready = new ReadyMessage();
-
     send(ready, peer);
+    delete ready;
+
+    peer->set_state(PEER_STATE_READYING);
     ready_timers.erase( peer->get_id() );
   }
   else {
     DEBUG("Network::send_ready: " << error.message());
+  }
+}
+
+void Network::complete_join(const system::error_code& error, shared_ptr<Peer> peer)
+{
+  if (!error) {
+    peer->set_state(PEER_STATE_CONNECTED);
+    join_timers.erase( peer->get_id() );
+  }
+  else {
+    DEBUG("Network::complete_join: " << error.message());
   }
 }
 
@@ -152,8 +178,21 @@ void Network::handle_incoming_message(const system::error_code& error,
       string received_message = emitter->get_last_message(bytes_transferred);
       Message* message = parse_message(received_message);
 
-      if (emitter->is_known())
-        log_message(message, emitter );
+
+      LogIndexHash::iterator it = find_log(message);
+
+      if (it != h_logs.end()) {
+        h_logs.modify(it, ack_message(emitter));
+        return; // either we sent this message, or we've already received it
+      }
+      else  {
+        if (emitter->is_known()) 
+          log_message(message, emitter);
+
+        if (message->is_broadcast())
+          broadcast(message);
+      }
+
 
       switch (message->get_type()) {
 
@@ -175,9 +214,11 @@ void Network::handle_incoming_message(const system::error_code& error,
         emitter->init( msg->get_id(), msg->get_key() );
         log_message(message, emitter);
 
-        Message* notif = new JoinNotifMessage( msg->get_id(), msg->get_key(), emitter->get_address() );
+        Message* notif = new JoinNotifMessage( msg->get_id(), msg->get_key(),
+                                               emitter->get_address() );
 
-        send_all(notif);
+        broadcast(notif, true);
+        delete notif;
 
         new_peers.erase( emitter->get_address() );
         handle_join(emitter);
@@ -188,12 +229,10 @@ void Network::handle_incoming_message(const system::error_code& error,
 
         t->async_wait( bind(&Network::send_ready, this,
                             asio::placeholders::error, emitter) );
-
       }
         break;
 
       case MESSAGE_TYPE_JOIN_NOTIF: {
-
         // Emitter is the entry point for some peer we don't know yet. 
         // - add this peer to our view
         // - send it a join ack so that it knows about us
@@ -201,19 +240,18 @@ void Network::handle_incoming_message(const system::error_code& error,
         // - add it to correct position in rings
 
         JoinNotifMessage* msg = dynamic_cast<JoinNotifMessage*>(message);
-
-        // if ID is valid
+        // TODO: if ID is valid
         shared_ptr<Peer> new_peer = connect_peer( msg->get_ip() );
         new_peer->init( msg->get_id(), msg->get_key() );
 
-        handle_join(new_peer);
+        handle_join(new_peer);        
 
         Peer::Handler listen_handler = bind(&Network::handle_incoming_message, this,
                                             asio::placeholders::error,
                                             asio::placeholders::bytes_transferred,
                                             new_peer);
         new_peer->start_listening(listen_handler);
-        
+
       }
         break;
 
@@ -237,19 +275,22 @@ void Network::handle_incoming_message(const system::error_code& error,
 
       case MESSAGE_TYPE_READY: {
 
-        // time to send READY_NOTIF to everyone, and compute our position on the rings
-        local_peer->set_state(PEER_STATE_READYING);
-        // TODO: figure out whether Readying state is useful
-        
-        Message* notif = new ReadyNotifMessage();
-        send_all(notif); // TODO: send only to direct predecessors/followers
+        // entry point has communicated our status to the group we belong to ;
+        // they all have been sending us JOIN_ACK so that now,
+        // we can compute our position on the rings
 
-        local_peer->set_state(PEER_STATE_CONNECTED);
+        // local_peer->set_state(PEER_STATE_READYING); // TODO: is this state useful?
+        
         add_peer_to_rings(local_peer);
         for (PeerMap::iterator it = peers.begin(); it!=peers.end(); it++) {
-
           add_peer_to_rings(it->second);
         }
+
+        local_peer->set_state(PEER_STATE_CONNECTED);
+
+        Message* notif = new ReadyNotifMessage();
+        broadcast(notif, true);
+        delete notif;
       }
         break;
 
@@ -286,7 +327,6 @@ void Network::handle_join(shared_ptr<Peer> peer)
 
   add_peer_to_rings(peer);
 
-  // TODO:
   // - add to rings
   // - send join ack
   // - if direct pred/succ, wait for READY before setting state to CONNECTED
@@ -294,6 +334,15 @@ void Network::handle_join(shared_ptr<Peer> peer)
 
   Message* ack = new JoinAckMessage( local_peer->get_id(), local_peer->get_key() );
   send(ack, peer);
+  delete ack;
+
+  if ( predecessors.find(peer) == predecessors.end() ) {
+    shared_ptr<asio::deadline_timer> t
+      (new asio::deadline_timer(*io_service, posix_time::seconds(JOIN_COMPLETE_TIME)));
+    join_timers[ peer->get_id() ] = t;
+    t->async_wait( bind(&Network::complete_join, this,
+                        asio::placeholders::error, peer) );
+  }
 }
 
 void Network::print_rings()
@@ -314,19 +363,12 @@ void Network::print_rings()
   }
 }
 
-void Network::broadcast(string msg)
-{
-  // LOL
-
-}
-
 void Network::print_logs()
 {
   cout << "Logs are " << sizeof(logs) << " bytes for "
        << logs.size() << " elements." << endl;
-  LogIndexTime& index = logs.get<LOG_INDEX_TIME>();
 
-  for (LogIndexTime::iterator it=index.begin(); it!=index.end(); it++) {
+  for (LogIndexTime::iterator it=t_logs.begin(); it!=t_logs.end(); it++) {
     Message* m = parse_message( it->message );
 
     cout << "Received/sent a " << MessageTypeNames[ m->get_type() ] << endl;
@@ -341,28 +383,31 @@ void Network::print_logs()
 
 void Network::log_message(Message* message, shared_ptr<Peer> emitter)
 {
-  MessageLog ml;
-  ml.message = message->serialize();
-
-  LogIndexHash& index = logs.get<LOG_INDEX_HASH>();
-  LogIndexHash::iterator it = index.find(ml);
+  LogIndexHash::iterator it = find_log(message);
   
-  if ( it==index.end() ) {
+  if ( it==h_logs.end() ) {// TODO: is this check useful or just plainly redundant?
+    MessageLog ml;
+    ml.message = message->serialize();
+
     // make a list of peers we expect to receive this message from
 
     if (message->is_broadcast())
       for (PeerSet::iterator p=predecessors.begin(); p!=predecessors.end(); p++)
         ml.control[ (*p)->get_id() ] = 0;
 
-    pair<LogIndexHash::iterator, bool> pair = index.insert( ml );
+    pair<LogIndexHash::iterator, bool> pair = h_logs.insert( ml );
     if (pair.second)
       it = pair.first;
   }
-  // else
-  //   DEBUG("HEY I KNOW THIS ONE");
             
-  if ( !emitter->is_local() && it!=index.end() )
-    index.modify(it, ack_message(emitter));
+  if ( !emitter->is_local() && it!=h_logs.end() )
+    h_logs.modify(it, ack_message(emitter));
 }
 
+Network::LogIndexHash::iterator Network::find_log(Message* message) {
 
+  MessageLog ml;
+  ml.message = message->serialize();
+
+  return h_logs.find(ml);
+}

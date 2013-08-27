@@ -54,5 +54,6 @@ extern const int JOIN_MSG_KEY_LENGTH;
 extern const int JOIN_NOTIF_IP_OFFSET;
 
 extern const int READY_TIME;
+extern const int JOIN_COMPLETE_TIME;
 
 #endif 

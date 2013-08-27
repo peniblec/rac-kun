@@ -35,3 +35,4 @@ extern const int JOIN_MSG_KEY_LENGTH = 5;
 extern const int JOIN_NOTIF_IP_OFFSET = JOIN_MSG_KEY_OFFSET + JOIN_MSG_KEY_LENGTH;
 
 extern const int READY_TIME = 3; // seconds
+extern const int JOIN_COMPLETE_TIME = 2*READY_TIME;

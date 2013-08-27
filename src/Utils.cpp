@@ -69,18 +69,20 @@ Message* parse_message(string msg)
   
   // DEBUG
 
-  // if (msg_type < MESSAGE_TYPE_END) {
+  // if (msg_type == MESSAGE_TYPE_JOIN_NOTIF) {
 
   //   DEBUG("Receiving a " << MessageTypeNames[msg_type] << " of size " << msg.size());
 
-  //   for (uint n=0; n< (msg.size()); n++)
-  //     cout << (int) ((unsigned char) msg[n]) << (n+1==msg.size() ? "" : "-");
+  //   for (uint n=MSG_STAMP_OFFSET; n< (MSG_STAMP_OFFSET+MSG_STAMP_LENGTH); n++)
+  //     cout << (int) ((unsigned char) msg[n]) << '-';
   //   cout << endl;
   // }
-  // /DEBUG
+  // // /DEBUG
 
   Message* m;
 
+  // try{
+  
   switch (msg_type) {
   case MESSAGE_TYPE_JOIN:
     {
@@ -124,6 +126,24 @@ Message* parse_message(string msg)
   m->set_stamp(stamp);
 
   return m;
+  // }
+  // catch (std::exception& e) {
+  //   cout << e.what() << endl;
+  // // DEBUG
+
+  // if (msg_type < MESSAGE_TYPE_END) {
+
+  //   DEBUG("Receiving a " << MessageTypeNames[msg_type] << " of size " << msg.size());
+
+  //   for (uint n=0; n< msg.size() ; n++)
+  //     cout << (int) ((unsigned char) msg[n]) << '-';
+  //   cout << endl;
+  // }
+  // throw MessageParseException();
+
+  // // // /DEBUG    
+
+  // }
 }
 
 string make_hash(string input)
