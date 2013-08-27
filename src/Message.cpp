@@ -22,6 +22,7 @@ void Message::make_stamp(string peer_id)
   long now = (tv.tv_sec*1000 + tv.tv_usec/1000);
 
   input.append( ltos(now) );
+  input.push_back( (char)type );
 
   stamp = make_hash(input);
 }
@@ -34,6 +35,12 @@ void Message::set_stamp(string _stamp)
 const Message::Type Message::get_type()
 {
   return type;
+}
+
+bool Message::is_broadcast()
+{
+  return ( type == MESSAGE_TYPE_JOIN_NOTIF
+           || type == MESSAGE_TYPE_DATA );
 }
 
 string Message::serialize()

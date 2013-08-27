@@ -40,20 +40,21 @@ void Network::add_peer_to_rings(shared_ptr<Peer> p)
 
 void Network::update_my_neighbours()
 {
-  predecessors.clear();
-  successors.clear();
-
+  PeerSet preds, succs;
   try {
     for (int i=0; i<RINGS_NB; i++) {
-      predecessors.insert( rings[i].get_predecessor( local_peer ) );
-      successors.insert( rings[i].get_successor( local_peer ) );    
+    
+      preds.insert( rings[i].get_predecessor( local_peer ) );
+      succs.insert( rings[i].get_successor( local_peer ) );    
+
     }
   }
   catch (PeerNotFoundException& e) {
     cout << e.what() << endl;
-    predecessors.clear();
-    successors.clear();
   }
+
+  predecessors = preds;
+  successors = succs;
 }
 
 void Network::join(string entry_point)
@@ -94,7 +95,6 @@ void Network::send_all(string message)
 
 void Network::send_all(Message* message)
 {
-  // DEBUG("Sending \"" << message << "\" to " << peers.size() << " peers.");
   message->make_stamp( local_peer->get_id() );
   string msg(message->serialize());
 
@@ -103,7 +103,7 @@ void Network::send_all(Message* message)
 
     it->second->send(msg);
   }
-  log_message(msg, local_peer);
+  log_message(message, local_peer);
   delete message;
 }
 
@@ -113,7 +113,7 @@ void Network::send(Message* message, shared_ptr<Peer> peer)
   string msg(message->serialize());
 
   peer->send(msg);
-  log_message(msg, local_peer);
+  log_message(message, local_peer);
   delete message;
 }
 
@@ -153,7 +153,7 @@ void Network::handle_incoming_message(const system::error_code& error,
       Message* message = parse_message(received_message);
 
       if (emitter->is_known())
-        log_message(received_message, emitter);
+        log_message(message, emitter );
 
       switch (message->get_type()) {
 
@@ -173,7 +173,7 @@ void Network::handle_incoming_message(const system::error_code& error,
         JoinMessage* msg = dynamic_cast<JoinMessage*>(message);
 
         emitter->init( msg->get_id(), msg->get_key() );
-        log_message(received_message, emitter);
+        log_message(message, emitter);
 
         Message* notif = new JoinNotifMessage( msg->get_id(), msg->get_key(), emitter->get_address() );
 
@@ -226,10 +226,11 @@ void Network::handle_incoming_message(const system::error_code& error,
         // check whether we're joining/readying, maybe?
         
         emitter->init( msg->get_id(), msg->get_key() );
+        emitter->set_state(PEER_STATE_CONNECTED);
         new_peers.erase( emitter->get_address() );
         peers[ emitter->get_id() ] = emitter;
 
-        emitter->set_state(PEER_STATE_CONNECTED);
+        log_message( message, emitter );
         
       }
         break;
@@ -323,39 +324,43 @@ void Network::print_logs()
 {
   cout << "Logs are " << sizeof(logs) << " bytes for "
        << logs.size() << " elements." << endl;
-  Message* m = NULL;
   LogIndexTime& index = logs.get<LOG_INDEX_TIME>();
 
   for (LogIndexTime::iterator it=index.begin(); it!=index.end(); it++) {
-    m = parse_message( it->message );
+    Message* m = parse_message( it->message );
+
     cout << "Received/sent a " << MessageTypeNames[ m->get_type() ] << endl;
+    
     map<string, int> preds = it->control;
     for (map<string, int>::iterator jt=preds.begin(); jt!=preds.end(); jt++) {
       cout << "- " << jt->first << ": " << jt->second << endl;
     }
-  }
-  if (m)
     delete m;
+  }
 }
 
-void Network::log_message(string message, shared_ptr<Peer> emitter)
+void Network::log_message(Message* message, shared_ptr<Peer> emitter)
 {
   MessageLog ml;
-  ml.message = message;
+  ml.message = message->serialize();
 
   LogIndexHash& index = logs.get<LOG_INDEX_HASH>();
   LogIndexHash::iterator it = index.find(ml);
-
+  
   if ( it==index.end() ) {
-    // initialize predecessors
+    // make a list of peers we expect to receive this message from
 
-    for (PeerSet::iterator p=predecessors.begin(); p!=predecessors.end(); p++)
-      ml.control[ (*p)->get_id() ] = 0;
+    if (message->is_broadcast())
+      for (PeerSet::iterator p=predecessors.begin(); p!=predecessors.end(); p++)
+        ml.control[ (*p)->get_id() ] = 0;
 
     pair<LogIndexHash::iterator, bool> pair = index.insert( ml );
     if (pair.second)
       it = pair.first;
   }
+  // else
+  //   DEBUG("HEY I KNOW THIS ONE");
+            
   if ( !emitter->is_local() && it!=index.end() )
     index.modify(it, ack_message(emitter));
 }

@@ -35,6 +35,7 @@ private:
     bool operator<(const MessageLog ml)const {
       string my_stamp(message, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
       string its_stamp(ml.message, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
+
       return my_stamp<its_stamp;
     }
   };
@@ -95,7 +96,7 @@ public:
 
   void print_logs();
 
-  void log_message(string message, shared_ptr<Peer> emitter);
+  void log_message(Message* message, shared_ptr<Peer> emitter);
 
 private:
 

@@ -26,7 +26,7 @@ shared_ptr<Peer> Ring::get_successor(shared_ptr<Peer> p)
 {
   RingMap::iterator it = find_peer( p->get_id() );
   
-  if ( it!= ring.end() ) {
+  if ( it!= ring.end() && ring.size()>1 ) {
 
     it++;
     return ( it != ring.end() ? it->second : ring.begin()->second );
@@ -39,7 +39,7 @@ shared_ptr<Peer> Ring::get_predecessor(shared_ptr<Peer> p)
 {
   RingMap::iterator it = find_peer( p->get_id() );
  
-  if ( it!= ring.end() )
+  if ( it!= ring.end() && ring.size()>1 )
     return ( it != ring.begin() ? (--it)->second : ring.rbegin()->second );
 
   else 

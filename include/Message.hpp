@@ -25,6 +25,8 @@ public:
 
   const Type get_type();
 
+  bool is_broadcast();
+
 protected:
   Message(Type _type);
   Type type;
