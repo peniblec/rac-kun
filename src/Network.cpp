@@ -47,15 +47,14 @@ void Network::update_my_neighbours()
     
       preds.insert( rings[i].get_predecessor( local_peer ) );
       succs.insert( rings[i].get_successor( local_peer ) );    
-
     }
+    predecessors = preds;
+    successors = succs;
   }
   catch (PeerNotFoundException& e) {
     cout << e.what() << endl;
   }
 
-  predecessors = preds;
-  successors = succs;
 }
 
 void Network::join(string entry_point)
@@ -143,22 +142,32 @@ void Network::complete_join(const system::error_code& error, shared_ptr<Peer> pe
   }
 }
 
+void Network::handle_disconnect(shared_ptr<Peer> p)
+{
+   DEBUG("Peer @" << p->get_address() << " disconnected.");
+    if ( peers.erase( p->get_id() ) ) {
+
+      for (int i=0; i<RINGS_NB; i++) {
+        rings[i].remove_peer(p);
+      }
+      update_my_neighbours();
+    }
+    else {
+      new_peers.erase( p->get_address() );
+    }
+}
+
 void Network::handle_incoming_message(const system::error_code& error,
                                       size_t bytes_transferred,
                                       shared_ptr<Peer> emitter)
 {
-  if (error == asio::error::eof) {
-    DEBUG("Peer @" << emitter->get_address() << " disconnected.");
-    if ( peers.erase( emitter->get_id() ) ) {
-      // TODO: remove from rings
-    }
-    else {
-      new_peers.erase( emitter->get_address() );
-    }
-  }
+  if (error == asio::error::eof) 
+    handle_disconnect(emitter);
+
   else if (error) {
     DEBUG("Network::handle_incoming_message: " << error.message());
   }
+
   else {
     string received_message = emitter->get_last_message(bytes_transferred);
     emitter->listen();
@@ -277,7 +286,18 @@ void Network::handle_incoming_message(const system::error_code& error,
         local_peer->set_state(PEER_STATE_CONNECTED);
 
         Message* notif = new ReadyNotifMessage();
-        broadcast(notif, true);
+
+        notif->make_stamp(local_peer->get_id());
+        string notif_msg = notif->serialize();
+
+        PeerSet::iterator it;
+        for (it=predecessors.begin(); it!=predecessors.end(); it++)
+          (*it)->send(notif_msg);
+        for (it=successors.begin(); it!=successors.end(); it++)
+          (*it)->send(notif_msg);
+
+        log_message( notif, local_peer );
+        
         delete notif;
       }
         break;
@@ -334,7 +354,11 @@ void Network::handle_join(shared_ptr<Peer> peer)
   send(ack, peer);
   delete ack;
 
-  if ( predecessors.find(peer) == predecessors.end() ) {
+  // TODO: check whether shared_ptr works well as key, and if not, either
+  // - create own key function
+  // - use map
+  if ( predecessors.find(peer) == predecessors.end()
+       && successors.find(peer) == successors.end() ) {
     shared_ptr<asio::deadline_timer> t
       (new asio::deadline_timer(*io_service, posix_time::seconds(JOIN_COMPLETE_TIME)));
     join_timers[ peer->get_id() ] = t;
@@ -398,7 +422,7 @@ void Network::log_message(Message* message, shared_ptr<Peer> emitter)
       it = pair.first;
   }
             
-  if ( !emitter->is_local() && it!=h_logs.end() )
+  if ( /*!emitter->is_local() &&*/ it!=h_logs.end() )
     h_logs.modify(it, ack_message(emitter));
 }
 

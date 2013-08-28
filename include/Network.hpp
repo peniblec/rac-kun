@@ -95,6 +95,8 @@ public:
 
   void complete_join(const system::error_code& error, shared_ptr<Peer> peer);
 
+  void handle_disconnect(shared_ptr<Peer> p);
+
   void handle_incoming_message(const system::error_code& error,
                                size_t bytes_transferred,
                                shared_ptr<Peer> emitter);

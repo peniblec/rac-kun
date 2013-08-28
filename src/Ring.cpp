@@ -22,6 +22,12 @@ void Ring::add_peer(shared_ptr<Peer> p)
   ring[key] = p;
 }
 
+void Ring::remove_peer(shared_ptr<Peer> p)
+{
+  string key = create_key( p->get_id() );
+  ring.erase( key );
+}
+
 shared_ptr<Peer> Ring::get_successor(shared_ptr<Peer> p)
 {
   RingMap::iterator it = find_peer( p->get_id() );
