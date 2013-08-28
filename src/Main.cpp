@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "Config.hpp"
+#include "DataMessage.hpp"
 #include "Listener.hpp"
 #include "Network.hpp"
 #include "Peer.hpp"
@@ -57,10 +58,12 @@ int main() {
 
       network->print_rings();
     }
-    // else if ( command.compare(COMMAND_BCAST)==0 ) {
+    else if ( command.compare(COMMAND_BCAST)==0 ) {
 
-    //   network->broadcast(argument);
-    // }
+      DataMessage* data = new DataMessage(argument);
+      network->broadcast(data, true);
+      delete data;
+    }
     else if ( command.compare(COMMAND_LOGS)==0 ) {
 
       network->print_logs();

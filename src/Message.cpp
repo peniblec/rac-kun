@@ -20,6 +20,7 @@ void Message::make_stamp(string peer_id)
   struct timeval tv;
   gettimeofday(&tv, NULL);
   long now = (tv.tv_sec*1000 + tv.tv_usec/1000);
+  // TODO: check whether long will work on most machines
 
   input.append( ltos(now) );
   input.push_back( (char)type );

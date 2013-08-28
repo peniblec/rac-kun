@@ -4,6 +4,7 @@
 
 #include "Utils.hpp"
 
+#include "DataMessage.hpp"
 #include "JoinMessage.hpp"
 #include "JoinNotifMessage.hpp"
 #include "JoinAckMessage.hpp"
@@ -117,6 +118,13 @@ Message* parse_message(string msg)
   case MESSAGE_TYPE_READY_NOTIF:
     {
       m = new ReadyNotifMessage();
+    }
+    break;
+  case MESSAGE_TYPE_DATA:
+    {
+      string data(msg, DATA_MESSAGE_OFFSET);
+
+      m = new DataMessage(data);
     }
     break;
   default:

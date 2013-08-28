@@ -1,6 +1,6 @@
 #include <boost/bind.hpp>
 
-#include "Message.hpp"
+#include "DataMessage.hpp"
 #include "JoinMessage.hpp"
 #include "JoinNotifMessage.hpp"
 #include "JoinAckMessage.hpp"
@@ -90,10 +90,9 @@ void Network::broadcast(Message* message, bool add_stamp)
   if (add_stamp)
     message->make_stamp( local_peer->get_id() );
   string msg(message->serialize());
-
+  
   PeerSet::iterator it;
   for (it=successors.begin(); it!=successors.end(); it++) {
-
     (*it)->send(msg);
   }
   log_message( message, local_peer );
@@ -108,19 +107,6 @@ void Network::send_all(string message)
     it->second->send(message);
   }
 }
-
-// void Network::send_all(Message* message)
-// {
-//   message->make_stamp( local_peer->get_id() );
-//   string msg(message->serialize());
-
-//   PeerMap::iterator it;
-//   for (it=peers.begin(); it!=peers.end(); it++) {
-
-//     it->second->send(msg);
-//   }
-//   log_message(message, local_peer);
-// }
 
 void Network::send(Message* message, shared_ptr<Peer> peer)
 {
@@ -174,15 +160,17 @@ void Network::handle_incoming_message(const system::error_code& error,
     DEBUG("Network::handle_incoming_message: " << error.message());
   }
   else {
-    try {
-      string received_message = emitter->get_last_message(bytes_transferred);
-      Message* message = parse_message(received_message);
+    string received_message = emitter->get_last_message(bytes_transferred);
+    emitter->listen();
 
+    try {
+      Message* message = parse_message(received_message);
 
       LogIndexHash::iterator it = find_log(message);
 
       if (it != h_logs.end()) {
         h_logs.modify(it, ack_message(emitter));
+        delete message;
         return; // either we sent this message, or we've already received it
       }
       else  {
@@ -301,6 +289,16 @@ void Network::handle_incoming_message(const system::error_code& error,
         emitter->set_state(PEER_STATE_CONNECTED);
       }
         break;
+
+      case MESSAGE_TYPE_DATA: {
+
+        DataMessage* msg = dynamic_cast<DataMessage*>(message);
+        
+        cout << "Peer " << ( emitter->is_known() ? emitter->get_id()
+                             : string("@" + emitter->get_address()) )
+             << " sent this:\n\t" << msg->get_data() << endl;
+      }
+        break;
         
       default: 
         throw MessageParseException();
@@ -311,12 +309,12 @@ void Network::handle_incoming_message(const system::error_code& error,
     catch (MessageParseException& e) {
       cout << "Couldn't make sense of this:" << endl;
       cout << "\t";
-      string buffer = emitter->get_last_message(bytes_transferred);
-      for (uint n=0; n< (buffer.size()); n++)
-        cout << (int) ((unsigned char) buffer[n]) << (n+1==buffer.size() ? "" : "-");
+
+      for (uint n=0; n< (received_message.size()); n++)
+        cout << (int) ((unsigned char) received_message[n])
+             << (n+1==received_message.size() ? "" : "-");
       cout << endl;
     }
-    emitter->listen();
   }  
 }
 

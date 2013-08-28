@@ -37,6 +37,12 @@ private:
       string its_stamp(ml.message, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
 
       return my_stamp<its_stamp;
+
+      // if that turns out to be a bottleneck, try this:
+      // return ( memcmp( (message.c_str())[MSG_STAMP_OFFSET],
+      //                  (ml.message.c_str())[MSG_STAMP_OFFSET],
+      //                  MSG_STAMP_LENGTH ) < 0 );
+      
     }
   };
 
@@ -80,8 +86,6 @@ public:
   void handle_join(shared_ptr<Peer> peer);
 
   void broadcast(Message* message, bool add_stamp=false);
-
-  // void send_all(Message* message);
 
   void send_all(string message);
 

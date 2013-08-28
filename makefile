@@ -10,7 +10,7 @@ LIBS_INC=/usr/include
 
 INCLUDE=-I$(INC) -I$(LIBS_INC)
 
-MESSAGES_OBJ=Message.o JoinMessage.o JoinNotifMessage.o JoinAckMessage.o ReadyMessage.o ReadyNotifMessage.o
+MESSAGES_OBJ=Message.o DataMessage.o JoinMessage.o JoinNotifMessage.o JoinAckMessage.o ReadyMessage.o ReadyNotifMessage.o
 OBJ=Main.o Config.o Listener.o $(MESSAGES_OBJ) Peer.o Network.o Ring.o Utils.o
 EXE=node
 
@@ -22,6 +22,7 @@ Main.o : $(SRC)/Main.cpp $(INC)/Config.hpp
 Config.o : $(SRC)/Config.cpp $(INC)/Config.hpp
 Listener.o : $(SRC)/Listener.cpp $(INC)/Listener.hpp $(INC)/Config.hpp
 Message.o : $(SRC)/Message.cpp $(INC)/Message.hpp $(INC)/Config.hpp
+DataMessage.o : $(SRC)/DataMessage.cpp $(INC)/DataMessage.hpp $(INC)/Config.hpp
 JoinMessage.o : $(SRC)/JoinMessage.cpp $(INC)/JoinMessage.hpp $(INC)/Config.hpp
 JoinNotifMessage.o : $(SRC)/JoinNotifMessage.cpp $(INC)/JoinNotifMessage.hpp $(INC)/Config.hpp
 JoinAckMessage.o : $(SRC)/JoinAckMessage.cpp $(INC)/JoinAckMessage.hpp $(INC)/Config.hpp

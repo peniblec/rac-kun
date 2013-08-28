@@ -62,16 +62,15 @@ void Peer::send(string message)
 
   socket->async_write_some(asio::buffer(message),
                            bind(&Peer::finish_write, this));
+  //                                asio::placeholders::error));
 }
 
-// void Peer::send(shared_ptr<Message> message)
-// {
-//   socket->async_write_some(asio::buffer( message->serialize() ),
-//                            bind(&Peer::finish_write, this));
-// }
-
+//void Peer::finish_write(const system::error_code& e)
 void Peer::finish_write()
 {
-  
+  // if (!e)
+  //   DEBUG("THERE I SENT ALL THE DATA");
+  // else
+  //   DEBUG("Peer::finish_write: " << e.message());
 }
 

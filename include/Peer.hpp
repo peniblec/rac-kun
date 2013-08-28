@@ -64,6 +64,7 @@ public:
 
   void send(string message);
   
+  //  void finish_write(const system::error_code& e);
   void finish_write();
 
 private:
