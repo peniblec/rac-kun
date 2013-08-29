@@ -26,7 +26,6 @@ class Network
 {
 private:
   typedef map<string, shared_ptr<Peer> > PeerMap;
-  typedef set<shared_ptr<Peer> > PeerSet;  
 
   struct MessageLog {
     string message;
@@ -87,6 +86,8 @@ public:
 
   void broadcast(Message* message, bool add_stamp=false);
 
+  void broadcast_data(string message);
+
   void send_all(string message);
 
   void send(Message* message, shared_ptr<Peer> peer);
@@ -119,8 +120,8 @@ private:
   
   shared_ptr<Peer> local_peer;
 
-  PeerSet predecessors;
-  PeerSet successors;
+  PeerMap predecessors;
+  PeerMap successors;
 
   History logs; // sorted with Message.stamp
   LogIndexHash& h_logs;

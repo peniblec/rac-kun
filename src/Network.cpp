@@ -41,18 +41,24 @@ void Network::add_peer_to_rings(shared_ptr<Peer> p)
 
 void Network::update_my_neighbours()
 {
-  PeerSet preds, succs;
+  PeerMap preds, succs;
+  shared_ptr<Peer> p;
   try {
     for (int i=0; i<RINGS_NB; i++) {
     
-      preds.insert( rings[i].get_predecessor( local_peer ) );
-      succs.insert( rings[i].get_successor( local_peer ) );    
+      p = rings[i].get_predecessor( local_peer );
+      preds.insert( pair<string, shared_ptr<Peer> >( p->get_id(), p ) );
+
+      p = rings[i].get_successor( local_peer );
+      succs.insert( pair<string, shared_ptr<Peer> >( p->get_id(), p ) );
     }
     predecessors = preds;
     successors = succs;
   }
-  catch (PeerNotFoundException& e) {
-    cout << e.what() << endl;
+  catch (PeerNotFoundException& e) { 
+    DEBUG("Network::update_my_neighbours: " << e.what());
+    predecessors.clear();
+    successors.clear();
   }
 
 }
@@ -90,11 +96,18 @@ void Network::broadcast(Message* message, bool add_stamp)
     message->make_stamp( local_peer->get_id() );
   string msg(message->serialize());
   
-  PeerSet::iterator it;
+  PeerMap::iterator it;
   for (it=successors.begin(); it!=successors.end(); it++) {
-    (*it)->send(msg);
+    it->second->send(msg);
   }
   log_message( message, local_peer );
+}
+
+void Network::broadcast_data(string message)
+{
+  DataMessage* data = new DataMessage(message);
+  broadcast(data, true);
+  delete data;
 }
 
 void Network::send_all(string message)
@@ -180,7 +193,9 @@ void Network::handle_incoming_message(const system::error_code& error,
       if (it != h_logs.end()) {
         h_logs.modify(it, ack_message(emitter));
         delete message;
-        return; // either we sent this message, or we've already received it
+        // either we sent this message, or we've already received it
+        // (and forwarded it), so we shouldn't have anything else to do
+        return;
       }
       else  {
         if (emitter->is_known()) 
@@ -290,11 +305,10 @@ void Network::handle_incoming_message(const system::error_code& error,
         notif->make_stamp(local_peer->get_id());
         string notif_msg = notif->serialize();
 
-        PeerSet::iterator it;
-        for (it=predecessors.begin(); it!=predecessors.end(); it++)
-          (*it)->send(notif_msg);
-        for (it=successors.begin(); it!=successors.end(); it++)
-          (*it)->send(notif_msg);
+        PeerMap directs(predecessors);
+        directs.insert( successors.begin(), successors.end() );
+        for (PeerMap::iterator it=directs.begin(); it!=directs.end(); it++)
+          it->second->send(notif_msg);
 
         log_message( notif, local_peer );
         
@@ -354,13 +368,12 @@ void Network::handle_join(shared_ptr<Peer> peer)
   send(ack, peer);
   delete ack;
 
-  // TODO: check whether shared_ptr works well as key, and if not, either
-  // - create own key function
-  // - use map
-  if ( predecessors.find(peer) == predecessors.end()
-       && successors.find(peer) == successors.end() ) {
+  if ( predecessors.find(peer->get_id()) == predecessors.end()
+       && successors.find(peer->get_id()) == successors.end() ) {
+
     shared_ptr<asio::deadline_timer> t
       (new asio::deadline_timer(*io_service, posix_time::seconds(JOIN_COMPLETE_TIME)));
+
     join_timers[ peer->get_id() ] = t;
     t->async_wait( bind(&Network::complete_join, this,
                         asio::placeholders::error, peer) );
@@ -376,12 +389,12 @@ void Network::print_rings()
   }
 
   cout << "My predecessors are:" << endl;
-  for (PeerSet::iterator it=predecessors.begin(); it!=predecessors.end(); it++) {
-    cout << "- " << (*it)->get_id() << endl;
+  for (PeerMap::iterator it=predecessors.begin(); it!=predecessors.end(); it++) {
+    cout << "- " << it->second->get_id() << endl;
   }
   cout << "My successors are:" << endl;
-  for (PeerSet::iterator it=successors.begin(); it!=successors.end(); it++) {
-    cout << "- " << (*it)->get_id() << endl;
+  for (PeerMap::iterator it=successors.begin(); it!=successors.end(); it++) {
+    cout << "- " << it->second->get_id() << endl;
   }
 }
 
@@ -414,8 +427,8 @@ void Network::log_message(Message* message, shared_ptr<Peer> emitter)
     // make a list of peers we expect to receive this message from
 
     if (message->is_broadcast())
-      for (PeerSet::iterator p=predecessors.begin(); p!=predecessors.end(); p++)
-        ml.control[ (*p)->get_id() ] = 0;
+      for (PeerMap::iterator p=predecessors.begin(); p!=predecessors.end(); p++)
+        ml.control[ p->second->get_id() ] = 0;
 
     pair<LogIndexHash::iterator, bool> pair = h_logs.insert( ml );
     if (pair.second)

@@ -4,7 +4,6 @@
 #include <iostream>
 
 #include "Config.hpp"
-#include "DataMessage.hpp"
 #include "Listener.hpp"
 #include "Network.hpp"
 #include "Peer.hpp"
@@ -29,10 +28,9 @@ int main() {
 
   cout << "What to do?" << endl
        << "send <message> - Send <message> to all peers" << endl
-       // << "add <address> - Add peer with address <address>" << endl
        << "join <address> - Join a session using <address> as an entry point" << endl
-       << "rings -  the constitution of the current rings" << endl
-       // << "broadcast <message> - Use rings to broadcast a message" << endl;
+       << "broadcast <message> - Use rings to broadcast a message" << endl
+       << "rings - Display the constitution of the current rings" << endl
        << "logs - Print all the messages received up until now" << endl;
 
   for(;;) {
@@ -46,10 +44,6 @@ int main() {
 
       network->send_all(argument);
     }
-    // else if ( command.compare(COMMAND_ADD)==0 ) {
-
-    //   network->connect_peer(argument);
-    // }
     else if ( command.compare(COMMAND_JOIN)==0 ) {
 
       network->join(argument);
@@ -60,9 +54,7 @@ int main() {
     }
     else if ( command.compare(COMMAND_BCAST)==0 ) {
 
-      DataMessage* data = new DataMessage(argument);
-      network->broadcast(data, true);
-      delete data;
+      network->broadcast_data(argument);
     }
     else if ( command.compare(COMMAND_LOGS)==0 ) {
 
