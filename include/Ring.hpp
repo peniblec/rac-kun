@@ -32,7 +32,7 @@ public:
 private:
   typedef map<string, shared_ptr<Peer> > RingMap;
 
-  RingMap::iterator find_peer(string id);
+  RingMap::iterator find_peer(shared_ptr<Peer> p);
 
   int index;
 

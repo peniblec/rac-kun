@@ -30,7 +30,7 @@ void Ring::remove_peer(shared_ptr<Peer> p)
 
 shared_ptr<Peer> Ring::get_successor(shared_ptr<Peer> p)
 {
-  RingMap::iterator it = find_peer( p->get_id() );
+  RingMap::iterator it = find_peer(p);
   
   if ( it!= ring.end() && ring.size()>1 ) {
 
@@ -43,7 +43,7 @@ shared_ptr<Peer> Ring::get_successor(shared_ptr<Peer> p)
 
 shared_ptr<Peer> Ring::get_predecessor(shared_ptr<Peer> p)
 {
-  RingMap::iterator it = find_peer( p->get_id() );
+  RingMap::iterator it = find_peer(p);
  
   if ( it!= ring.end() && ring.size()>1 )
     return ( it != ring.begin() ? (--it)->second : ring.rbegin()->second );
@@ -68,9 +68,9 @@ void Ring::display()
   }
 }
 
-Ring::RingMap::iterator Ring::find_peer(string id) // TODO: move throw here?
+Ring::RingMap::iterator Ring::find_peer(shared_ptr<Peer> p)
 {
-  string key = create_key(id);
+  string key = create_key( p->get_id() );
   RingMap::iterator it = ring.find(key);
   return it;
 }
