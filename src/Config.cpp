@@ -6,7 +6,6 @@ const char* PeerStateNames[PEER_STATE_END] =
   {
     "New",
     "Joining",
-    "Readying",
     "Connected"
   };
 

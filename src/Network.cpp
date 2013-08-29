@@ -136,7 +136,6 @@ void Network::send_ready(const system::error_code& error, shared_ptr<Peer> peer)
     send(ready, peer);
     delete ready;
 
-    peer->set_state(PEER_STATE_READYING);
     ready_timers.erase( peer->get_id() );
   }
   else {
@@ -291,8 +290,6 @@ void Network::handle_incoming_message(const system::error_code& error,
         // they all have been sending us JOIN_ACK so that now,
         // we can compute our position on the rings
 
-        // local_peer->set_state(PEER_STATE_READYING); // TODO: is this state useful?
-        
         add_peer_to_rings(local_peer);
         for (PeerMap::iterator it = peers.begin(); it!=peers.end(); it++) {
           add_peer_to_rings(it->second);
@@ -420,7 +417,7 @@ void Network::log_message(Message* message, shared_ptr<Peer> emitter)
 {
   LogIndexHash::iterator it = find_log(message);
   
-  if ( it==h_logs.end() ) {// TODO: is this check useful or just plainly redundant?
+  if ( it==h_logs.end() ) {
     MessageLog ml;
     ml.message = message->serialize();
 
