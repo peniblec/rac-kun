@@ -66,14 +66,19 @@ void Network::update_my_neighbours()
 void Network::join(string entry_point)
 {
   // TODO: check if not already CONNECTED
-  shared_ptr<Peer> entry_peer = connect_peer(entry_point);
-  local_peer->set_state(PEER_STATE_JOINING);
+  try {
+    shared_ptr<Peer> entry_peer = connect_peer(entry_point);
+    local_peer->set_state(PEER_STATE_JOINING);
 
-  add_new_peer(entry_peer);
+    add_new_peer(entry_peer);
   
-  Message* join = new JoinMessage(local_peer->get_id(), local_peer->get_key());
-  send( join, entry_peer );
-  delete join;
+    Message* join = new JoinMessage(local_peer->get_id(), local_peer->get_key());
+    send( join, entry_peer );
+    delete join;
+  }
+  catch (std::exception& e) {
+    DEBUG("Network::join: " << e.what());
+  }
 }
 
 shared_ptr<Peer> Network::connect_peer(string peer_name)
