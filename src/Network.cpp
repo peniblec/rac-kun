@@ -108,9 +108,9 @@ void Network::broadcast(Message* message, bool add_stamp)
   log_message( message, local_peer );
 }
 
-void Network::broadcast_data(string message)
+void Network::broadcast_data(string content)
 {
-  DataMessage* data = new DataMessage(message);
+  DataMessage* data = new DataMessage(content);
   broadcast(data, true);
   delete data;
 }
