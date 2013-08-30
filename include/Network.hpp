@@ -94,6 +94,10 @@ public:
 
   void send_ready(const system::error_code& error, shared_ptr<Peer> peer);
 
+  void answer_join_request(shared_ptr<Peer> peer);
+
+  void check_for_new_peers();
+
   void complete_join(const system::error_code& error, shared_ptr<Peer> peer);
 
   void handle_disconnect(shared_ptr<Peer> p);
@@ -116,10 +120,11 @@ private:
   shared_ptr<tcp::resolver> resolver;
 
   PeerMap peers; // sorted with ID
-  PeerMap new_peers; // sorted with IP
-  
   shared_ptr<Peer> local_peer;
 
+  PeerMap new_peers; // sorted with IP
+  bool join_token;
+  
   PeerMap predecessors;
   PeerMap successors;
 

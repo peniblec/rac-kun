@@ -13,7 +13,7 @@
 Network::Network(shared_ptr<asio::io_service> _ios,
                  shared_ptr<tcp::resolver> _resolver,
                  shared_ptr<Peer> p)
-  : io_service(_ios), resolver(_resolver), local_peer(p),
+  : io_service(_ios), resolver(_resolver), local_peer(p), join_token(true),
     h_logs( logs.get<LOG_INDEX_HASH>() ), t_logs( logs.get<LOG_INDEX_TIME>() )
 {
   for (int i=0; i<RINGS_NB; i++)
@@ -143,11 +143,49 @@ void Network::send_ready(const system::error_code& error, shared_ptr<Peer> peer)
   }
 }
 
+void Network::answer_join_request(shared_ptr<Peer> peer)
+{
+  join_token = false;
+  Message* notif = new JoinNotifMessage( peer->get_id(), peer->get_key(),
+                                         peer->get_address() );
+
+  broadcast(notif, true);
+  delete notif;
+
+  new_peers.erase( peer->get_address() );
+  handle_join(peer);
+
+  shared_ptr<asio::deadline_timer> t
+    (new asio::deadline_timer(*io_service, posix_time::seconds(READY_TIME)));
+  ready_timers[ peer->get_id() ] = t;
+
+  t->async_wait( bind(&Network::send_ready, this,
+                      asio::placeholders::error, peer) );
+  
+}
+
+void Network::check_for_new_peers()
+{
+  PeerMap::iterator it = new_peers.begin();
+
+  while ( it!=new_peers.end() && !(it->second->is_known()) )
+    it++;
+
+  if (it!=new_peers.end())
+    answer_join_request( it->second );
+  else
+    join_token = true;
+
+}
+
 void Network::complete_join(const system::error_code& error, shared_ptr<Peer> peer)
 {
   if (!error) {
     peer->set_state(PEER_STATE_CONNECTED);
     join_timers.erase( peer->get_id() );
+    
+    check_for_new_peers();
+
   }
   else {
     DEBUG("Network::complete_join: " << error.message());
@@ -219,27 +257,17 @@ void Network::handle_incoming_message(const system::error_code& error,
         // - move emitter from new_peers to joining_peers
         // - wait for T, then send READY to emitter
         // - add it to correct position in rings
-        
+
         JoinMessage* msg = dynamic_cast<JoinMessage*>(message);
 
         emitter->init( msg->get_id(), msg->get_key() );
+        emitter->set_state( PEER_STATE_JOINING );
         log_message(message, emitter);
 
-        Message* notif = new JoinNotifMessage( msg->get_id(), msg->get_key(),
-                                               emitter->get_address() );
+        if (join_token)
+          answer_join_request(emitter);
 
-        broadcast(notif, true);
-        delete notif;
-
-        new_peers.erase( emitter->get_address() );
-        handle_join(emitter);
-
-        shared_ptr<asio::deadline_timer> t
-          (new asio::deadline_timer(*io_service, posix_time::seconds(READY_TIME)));
-        ready_timers[ emitter->get_id() ] = t;
-
-        t->async_wait( bind(&Network::send_ready, this,
-                            asio::placeholders::error, emitter) );
+        
       }
         break;
 
@@ -252,8 +280,10 @@ void Network::handle_incoming_message(const system::error_code& error,
 
         JoinNotifMessage* msg = dynamic_cast<JoinNotifMessage*>(message);
         // TODO: if ID is valid
+        join_token = false;
         shared_ptr<Peer> new_peer = connect_peer( msg->get_ip() );
         new_peer->init( msg->get_id(), msg->get_key() );
+        new_peer->set_state(PEER_STATE_JOINING);
 
         handle_join(new_peer);        
 
@@ -318,6 +348,7 @@ void Network::handle_incoming_message(const system::error_code& error,
         // emitter is now ready to communicate with us: move to regular peers map
 
         emitter->set_state(PEER_STATE_CONNECTED);
+        check_for_new_peers();
       }
         break;
 
@@ -352,7 +383,6 @@ void Network::handle_incoming_message(const system::error_code& error,
 void Network::handle_join(shared_ptr<Peer> peer)
 {
   peers[ peer->get_id() ] = peer;
-  peer->set_state( PEER_STATE_JOINING);
 
   add_peer_to_rings(peer);
 
