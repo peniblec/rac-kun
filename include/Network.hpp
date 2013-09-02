@@ -26,6 +26,9 @@ class Network
 {
 private:
   typedef map<string, shared_ptr<Peer> > PeerMap;
+  // associates ID with peer
+  typedef map<string, pair<shared_ptr<Peer>, unsigned short> > JoinMap;
+  // associates IP with peer/listening port
 
   struct MessageLog {
     string message;
@@ -78,9 +81,9 @@ public:
      - called by UI
      - used to join an existing system
 
-     - entry_point: hostname/ip of the node to send the join request to
+     - {entry_ip: ip or hostname; port}: entry point info
   */
-  void join(string entry_point);
+  void join(string entry_ip, string entry_port);
 
   /* answer_join_request:
      - called when receiving a join request and the system is not
@@ -89,8 +92,9 @@ public:
      - setup timer before sending ready message
 
      - peer: the new peer joining the system
+     - port: the peer's listening port
    */
-  void answer_join_request(shared_ptr<Peer> peer);
+  void answer_join_request(shared_ptr<Peer> peer, unsigned short port);
 
   /* handle_join:
      - called when receiving a join request/notification
@@ -118,12 +122,12 @@ public:
 
   /* connect_peer:
      - called when trying to join/when adding a joining node to our view
-     - use a hostname/ip to create a Peer and its associated socket
+     - use a hostname/ip and port to create a Peer and its associated socket
 
-     - peer_name: hostname/ip of the node to reach
+     - {ip: ip or hostname; port}: info about the node to reach
      - returns the new peer, unidentified yet
    */
-  shared_ptr<Peer> connect_peer(string peer_name);
+  shared_ptr<Peer> connect_peer(string ip, string port);
   
   /* add_new_peer:
      - called by Listener, or when contacting entry point
@@ -265,10 +269,10 @@ private:
   shared_ptr<asio::io_service> io_service;
   shared_ptr<tcp::resolver> resolver;
 
-  PeerMap peers; // sorted with ID
+  PeerMap peers;
   shared_ptr<Peer> local_peer;
 
-  PeerMap new_peers; // sorted with IP
+  JoinMap new_peers;
   bool join_token;
   
   PeerMap predecessors;

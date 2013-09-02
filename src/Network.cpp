@@ -22,7 +22,7 @@ Network::Network(shared_ptr<asio::io_service> _ios,
 
 void Network::add_new_peer(shared_ptr<Peer> p)
 {
-  new_peers[ p->get_address() ] = p;
+  new_peers[ p->get_address() ] = pair<shared_ptr<Peer>, unsigned short>(p, 0);
 
   Peer::Handler listen_handler = bind(&Network::handle_incoming_message, this,
                                       asio::placeholders::error,
@@ -63,16 +63,17 @@ void Network::update_my_neighbours()
 
 }
 
-void Network::join(string entry_point)
+void Network::join(string entry_ip, string entry_port)
 {
   // TODO: check if not already CONNECTED
   try {
-    shared_ptr<Peer> entry_peer = connect_peer(entry_point);
+    shared_ptr<Peer> entry_peer = connect_peer(entry_ip, entry_port);
     local_peer->set_state(PEER_STATE_JOINING);
 
     add_new_peer(entry_peer);
   
-    Message* join = new JoinMessage(local_peer->get_id(), local_peer->get_key());
+    Message* join = new JoinMessage(local_peer->get_id(), local_peer->get_key(),
+                                    RAC_PORT);
     send( join, entry_peer );
     delete join;
   }
@@ -81,9 +82,9 @@ void Network::join(string entry_point)
   }
 }
 
-shared_ptr<Peer> Network::connect_peer(string peer_name)
+shared_ptr<Peer> Network::connect_peer(string ip, string port)
 {
-  tcp::resolver::query query(peer_name, itos(RAC_PORT));
+  tcp::resolver::query query(ip, port);
   tcp::resolver::iterator endpoint_iterator = resolver->resolve(query);
 
   shared_ptr<tcp::socket> socket(new tcp::socket(*io_service));
@@ -91,7 +92,10 @@ shared_ptr<Peer> Network::connect_peer(string peer_name)
 
   shared_ptr<Peer> new_peer(new Peer(socket));
 
-
+  // DEBUG("Connected to entry point at "
+  //       << new_peer->get_socket().local_endpoint().address().to_string()
+  //       << ":" << new_peer->get_socket().local_endpoint().port() );
+        
   return new_peer;
 }
 
@@ -148,11 +152,11 @@ void Network::send_ready(const system::error_code& error, shared_ptr<Peer> peer)
   }
 }
 
-void Network::answer_join_request(shared_ptr<Peer> peer)
+void Network::answer_join_request(shared_ptr<Peer> peer, unsigned short port)
 {
   join_token = false;
   Message* notif = new JoinNotifMessage( peer->get_id(), peer->get_key(),
-                                         peer->get_address() );
+                                         peer->get_address(), port );
 
   broadcast(notif, true);
   delete notif;
@@ -171,13 +175,13 @@ void Network::answer_join_request(shared_ptr<Peer> peer)
 
 void Network::check_for_new_peers()
 {
-  PeerMap::iterator it = new_peers.begin();
+  JoinMap::iterator it = new_peers.begin();
 
-  while ( it!=new_peers.end() && !(it->second->is_known()) )
+  while ( it!=new_peers.end() && !(it->second.first->is_known()) )
     it++;
 
   if (it!=new_peers.end())
-    answer_join_request( it->second );
+    answer_join_request( it->second.first, it->second.second );
   else
     join_token = true;
 
@@ -270,7 +274,9 @@ void Network::handle_incoming_message(const system::error_code& error,
         log_message(message, emitter);
 
         if (join_token)
-          answer_join_request(emitter);
+          answer_join_request(emitter, msg->get_port());
+        else
+          new_peers[ emitter->get_address() ].second = msg->get_port();
 
         
       }
@@ -286,7 +292,9 @@ void Network::handle_incoming_message(const system::error_code& error,
         JoinNotifMessage* msg = dynamic_cast<JoinNotifMessage*>(message);
         // TODO: if ID is valid
         join_token = false;
-        shared_ptr<Peer> new_peer = connect_peer( msg->get_ip() );
+        shared_ptr<Peer> new_peer = connect_peer( msg->get_ip(),
+                                                  itos(msg->get_port()) );
+
         new_peer->init( msg->get_id(), msg->get_key() );
         new_peer->set_state(PEER_STATE_JOINING);
 

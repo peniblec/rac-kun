@@ -8,7 +8,7 @@
 class JoinMessage : public Message
 {
 public:
-  JoinMessage(string _id, string _pub_k);
+  JoinMessage(string _id, string _pub_k, unsigned short _port);
   
   string serialize();
   void display();
@@ -21,9 +21,14 @@ public:
     return pub_k;
   }
   
+  const unsigned short get_port() {
+    return port;
+  }
+
 private:
   string id;
   string pub_k;
+  unsigned short port;
 };
 
 

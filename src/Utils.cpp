@@ -33,6 +33,7 @@ shared_ptr<Peer> create_local_peer()
 
 void parse_input(string& input, string& command, string& argument)
 {
+  // TODO: clean this with substr
   int space = input.find(' ');
   int l;
 
@@ -90,16 +91,27 @@ Message* parse_message(string msg)
       string id(msg, JOIN_MSG_ID_OFFSET, JOIN_MSG_ID_LENGTH);
       string pub_k(msg, JOIN_MSG_KEY_OFFSET, JOIN_MSG_KEY_LENGTH);
 
-      m = new JoinMessage(id, pub_k);
+      string endpoint(msg, JOIN_NOTIF_ENDPOINT_OFFSET);
+
+      unsigned short port;
+      istringstream(endpoint) >> port;
+
+      m = new JoinMessage(id, pub_k, port);
     }
     break;
   case MESSAGE_TYPE_JOIN_NOTIF:
     {
       string id(msg, JOIN_MSG_ID_OFFSET, JOIN_MSG_ID_LENGTH);
       string pub_k(msg, JOIN_MSG_KEY_OFFSET, JOIN_MSG_KEY_LENGTH);
-      string ip(msg, JOIN_NOTIF_IP_OFFSET);
+      string endpoint(msg, JOIN_NOTIF_ENDPOINT_OFFSET);
+
+      int colon = endpoint.find(':');
+
+      string ip( endpoint.substr(0, colon) );
+      unsigned short port;
+      istringstream ( endpoint.substr( colon+1, endpoint.size() ) ) >> port;
       
-      m = new JoinNotifMessage(id, pub_k, ip);
+      m = new JoinNotifMessage(id, pub_k, ip, port);
     }
     break;
   case MESSAGE_TYPE_JOIN_ACK:

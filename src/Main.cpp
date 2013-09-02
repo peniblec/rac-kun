@@ -46,7 +46,7 @@ int main() {
     }
     else if ( command.compare(COMMAND_JOIN)==0 ) {
 
-      network->join(argument);
+      network->join(argument, itos(RAC_PORT));
     }
     else if ( command.compare(COMMAND_RINGS)==0 ) {
 

@@ -33,7 +33,7 @@ extern const unsigned int JOIN_MSG_ID_LENGTH = ID_LENGTH;
 extern const unsigned int JOIN_MSG_KEY_OFFSET = JOIN_MSG_ID_OFFSET + JOIN_MSG_ID_LENGTH;
 extern const unsigned int JOIN_MSG_KEY_LENGTH = 5;
 
-extern const unsigned int JOIN_NOTIF_IP_OFFSET = JOIN_MSG_KEY_OFFSET + JOIN_MSG_KEY_LENGTH;
+extern const unsigned int JOIN_NOTIF_ENDPOINT_OFFSET = JOIN_MSG_KEY_OFFSET + JOIN_MSG_KEY_LENGTH;
 
 extern const unsigned int READY_TIME = 3; // seconds
 extern const unsigned int JOIN_COMPLETE_TIME = 2*READY_TIME;

@@ -37,6 +37,11 @@ public:
     return (local ? "localhost" : socket->remote_endpoint().address().to_string());
   }
 
+  const unsigned short get_port() {
+    // TODO: return local port
+    return (local ? RAC_PORT : socket->remote_endpoint().port()); 
+  }
+
   const string get_id() {
     return id;
   }

@@ -8,7 +8,7 @@
 class JoinNotifMessage : public Message
 {
 public:
-  JoinNotifMessage(string _id, string _pub_k, string ip);
+  JoinNotifMessage(string _id, string _pub_k, string _ip, unsigned short _port);
   
   string serialize();
   void display();
@@ -25,10 +25,15 @@ public:
     return ip;
   }
 
+  const unsigned short get_port() {
+    return port;
+  }
+
 private:
   string id;
   string pub_k;
   string ip;
+  unsigned short port;
 };
 
 

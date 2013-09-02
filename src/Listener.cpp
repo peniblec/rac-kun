@@ -8,6 +8,8 @@ Listener::Listener(shared_ptr<asio::io_service> io_service, shared_ptr<Network> 
   : acceptor(*io_service, tcp::endpoint(tcp::v4(), RAC_PORT)),
     network(_network)
 {
+  // DEBUG("Now listening on " << acceptor.local_endpoint().address().to_string()
+  //       << ":" << acceptor.local_endpoint().port() << ".");
   start_accept();
 }
 
@@ -35,7 +37,7 @@ void Listener::handle_accept(list<Peer*>::iterator new_peer_it,
 
     pending_peers.erase(new_peer_it);
 
-    DEBUG("Listener::handle_accept: Now in touch with peer @" << new_peer->get_address() << ".");
+    DEBUG("Listener::handle_accept: Now in touch with peer @" << new_peer->get_address() << ":" << new_peer->get_port() << ".");
 
     start_accept();
   }

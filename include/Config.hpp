@@ -52,7 +52,7 @@ extern const unsigned int JOIN_MSG_ID_LENGTH;
 extern const unsigned int JOIN_MSG_KEY_OFFSET;
 extern const unsigned int JOIN_MSG_KEY_LENGTH;
 
-extern const unsigned int JOIN_NOTIF_IP_OFFSET;
+extern const unsigned int JOIN_NOTIF_ENDPOINT_OFFSET;
 
 extern const unsigned int READY_TIME;
 extern const unsigned int JOIN_COMPLETE_TIME;
