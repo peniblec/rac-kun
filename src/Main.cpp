@@ -48,7 +48,11 @@ int main(int argc, char** argv) {
     }
     else if ( command.compare(COMMAND_JOIN)==0 ) {
 
-      network->join(argument, itos(RAC_PORT));
+      int colon = argument.find(':');
+      string ip( argument.substr(0, colon) );
+      string port( argument.substr(colon+1, argument.size()) );
+
+      network->join(ip, port);
     }
     else if ( command.compare(COMMAND_RINGS)==0 ) {
 

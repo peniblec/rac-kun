@@ -5,11 +5,12 @@
 
 
 Listener::Listener(shared_ptr<asio::io_service> io_service, shared_ptr<Network> _network)
-  : acceptor(*io_service, tcp::endpoint(tcp::v4(), RAC_PORT)),
+  : acceptor(*io_service, tcp::endpoint(tcp::v4(), settings.LISTEN_PORT)),
     network(_network)
 {
-  // DEBUG("Now listening on " << acceptor.local_endpoint().address().to_string()
-  //       << ":" << acceptor.local_endpoint().port() << ".");
+  DEBUG("Now listening on port " << acceptor.local_endpoint().port() << ".");
+  settings.LISTEN_PORT = acceptor.local_endpoint().port();
+
   start_accept();
 }
 

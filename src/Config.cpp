@@ -1,7 +1,9 @@
 #include <boost/program_options.hpp>
 #include <cryptopp/sha.h>
+#include <exception>
 
 #include "Config.hpp"
+#include "Utils.hpp"
 
 const char* PeerStateNames[PEER_STATE_END] =
   {
@@ -40,6 +42,8 @@ const unsigned int READY_TIME = 3; // seconds
 const unsigned int JOIN_COMPLETE_TIME = 2*READY_TIME;
 
 
+Settings settings;
+
 void init_settings(int argc, char** argv)
 {
   using namespace boost::program_options;
@@ -60,7 +64,7 @@ void init_settings(int argc, char** argv)
   positional_options_description pos_options;
   pos_options.add("config_file", 1);
 
-  variables_map cmd_line_map, conf_file_map;
+  variables_map cmd_line_map;
 
   store(command_line_parser(argc, argv).options(config).positional(pos_options).run(),
         cmd_line_map);
@@ -71,4 +75,23 @@ void init_settings(int argc, char** argv)
     exit(EXIT_SUCCESS);
   }
 
+  string config_file = ( cmd_line_map.count("config_file") ?
+                         cmd_line_map["config_file"].as<string>() :
+                         "rac.conf" );
+  
+  variables_map conf_file_map;
+  try {
+    store(parse_config_file<char>(config_file.c_str(), config), conf_file_map);
+    notify(conf_file_map);
+  }
+  catch (std::exception& e) {
+    cout << "Couldn't find configuration file." << endl;
+  }
+
+  settings.LISTEN_PORT =
+    ( cmd_line_map.count("listen_port")
+      ? cmd_line_map["listen_port"].as<unsigned short>()
+      : ( conf_file_map.count("listen_port")
+          ? conf_file_map["listen_port"].as<unsigned short>()
+          : 0 ) );
 }

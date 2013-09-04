@@ -73,7 +73,7 @@ void Network::join(string entry_ip, string entry_port)
     add_new_peer(entry_peer);
   
     Message* join = new JoinMessage(local_peer->get_id(), local_peer->get_key(),
-                                    RAC_PORT);
+                                    settings.LISTEN_PORT);
     send( join, entry_peer );
     delete join;
   }

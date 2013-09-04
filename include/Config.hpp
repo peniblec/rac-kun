@@ -6,7 +6,6 @@
 using namespace std;
 
 #define MESSAGE_SIZE 128
-#define RAC_PORT 1337
 #define RINGS_NB 3
 
 const string COMMAND_SEND = "send";
@@ -57,11 +56,17 @@ extern const unsigned int READY_TIME;
 extern const unsigned int JOIN_COMPLETE_TIME;
 
 
-// configurable constants
-extern const unsigned short LISTEN_PORT;
-extern const string ENTRY_POINT_IP;
-extern const unsigned short ENTRY_POINT_PORT;
-extern const bool UI;
+// configurable settings
+
+class Settings {
+public:
+  unsigned short LISTEN_PORT;
+  string ENTRY_POINT_IP;
+  unsigned short ENTRY_POINT_PORT;
+  bool UI;
+};
+  
+extern Settings settings;
 
 void init_settings(int argc, char** argv);
 

@@ -110,7 +110,7 @@ Message* parse_message(string msg)
       string ip( endpoint.substr(0, colon) );
       unsigned short port;
       istringstream ( endpoint.substr( colon+1, endpoint.size() ) ) >> port;
-      
+ 
       m = new JoinNotifMessage(id, pub_k, ip, port);
     }
     break;
