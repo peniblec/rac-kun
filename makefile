@@ -5,7 +5,7 @@ RM=rm -f -R
 SRC=src
 INC=include
 
-LIBS=-L/usr/lib -lboost_thread -lboost_system -lcryptopp
+LIBS=-L/usr/lib -lboost_program_options -lboost_system -lboost_thread -lcryptopp
 LIBS_INC=/usr/include
 
 INCLUDE=-I$(INC) -I$(LIBS_INC)

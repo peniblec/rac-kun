@@ -13,7 +13,9 @@ using namespace boost;
 using boost::asio::ip::tcp;
 
 
-int main() {
+int main(int argc, char** argv) {
+
+  init_settings(argc, argv);
 
   // setup and start local_listener in other thread
   shared_ptr<asio::io_service> io_service(new asio::io_service);

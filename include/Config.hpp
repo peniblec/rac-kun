@@ -10,7 +10,6 @@ using namespace std;
 #define RINGS_NB 3
 
 const string COMMAND_SEND = "send";
-const string COMMAND_ADD = "add";
 const string COMMAND_JOIN = "join";
 const string COMMAND_RINGS = "rings";
 const string COMMAND_BCAST = "broadcast";
@@ -56,5 +55,15 @@ extern const unsigned int JOIN_NOTIF_ENDPOINT_OFFSET;
 
 extern const unsigned int READY_TIME;
 extern const unsigned int JOIN_COMPLETE_TIME;
+
+
+// configurable constants
+extern const unsigned short LISTEN_PORT;
+extern const string ENTRY_POINT_IP;
+extern const unsigned short ENTRY_POINT_PORT;
+extern const bool UI;
+
+void init_settings(int argc, char** argv);
+
 
 #endif 
