@@ -13,6 +13,7 @@ const string COMMAND_JOIN = "join";
 const string COMMAND_RINGS = "rings";
 const string COMMAND_BCAST = "broadcast";
 const string COMMAND_LOGS = "logs";
+const string COMMAND_HELP = "help";
 
 enum PeerState {
   PEER_STATE_NEW = 0,

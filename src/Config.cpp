@@ -116,5 +116,9 @@ void init_settings(int argc, char** argv)
   else
     settings.ENTRY_POINT_PORT = 0;
 
-
+  settings.UI = ( cmd_line_map.count("ui")
+                  ? cmd_line_map["ui"].as<bool>()
+                  : ( conf_file_map.count("ui")
+                      ? conf_file_map["ui"].as<bool>()
+                      : true ) );
 }

@@ -28,14 +28,11 @@ int main(int argc, char** argv) {
 
   thread io_service_thread(bind(&asio::io_service::run, io_service));
 
-  cout << "What to do?" << endl
-       << "send <message> - Send <message> to all peers" << endl
-       << "join <address> - Join a session using <address> as an entry point" << endl
-       << "broadcast <message> - Use rings to broadcast a message" << endl
-       << "rings - Display the constitution of the current rings" << endl
-       << "logs - Print all the messages received up until now" << endl;
+  if ( settings.ENTRY_POINT_PORT )
+    network->join(settings.ENTRY_POINT_IP, itos(settings.ENTRY_POINT_PORT));
 
-  for(;;) {
+
+  while (settings.UI) {
 
     string input, command, argument;
     getline(cin, input);
@@ -66,8 +63,21 @@ int main(int argc, char** argv) {
 
       network->print_logs();
     }
+    else if ( command.compare(COMMAND_HELP)==0 ) {
+
+      cout << "What to do?" << endl
+           << "send <message>\tSend <message> to all peers" << endl
+           << "join <address>\tJoin a session using <address> as an entry point" << endl
+           << "broadcast <message>\tUse rings to broadcast a message" << endl
+           << "rings\tDisplay the constitution of the current rings" << endl
+           << "logs\tPrint all the messages received up until now" << endl;
+    }
+    else
+      cout << "Invalid command." << endl;
     
   }
+
+  io_service_thread.join();
 
   return 0;
 }
