@@ -58,8 +58,7 @@ extern const unsigned int JOIN_COMPLETE_TIME;
 
 // configurable settings
 
-class Settings {
-public:
+struct Settings {
   unsigned short LISTEN_PORT;
   string ENTRY_POINT_IP;
   unsigned short ENTRY_POINT_PORT;

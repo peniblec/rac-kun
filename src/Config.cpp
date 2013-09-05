@@ -94,4 +94,27 @@ void init_settings(int argc, char** argv)
       : ( conf_file_map.count("listen_port")
           ? conf_file_map["listen_port"].as<unsigned short>()
           : 0 ) );
+
+  if (cmd_line_map.count("entry_point") || conf_file_map.count("entry_point")) {
+
+    string endpoint = ( cmd_line_map.count("entry_point")
+                        ? cmd_line_map["entry_point"].as<string>()
+                        : conf_file_map["entry_point"].as<string>() );
+
+    int colon = endpoint.find(':');
+
+    string ip( endpoint.substr(0, colon) );
+    settings.ENTRY_POINT_IP = ip;
+    
+    unsigned short port;
+    if ( (istringstream( endpoint.substr(colon+1, endpoint.size()) ) >> port).fail() )
+      settings.ENTRY_POINT_PORT = 0;
+    else
+      settings.ENTRY_POINT_PORT = port;
+                        
+  }
+  else
+    settings.ENTRY_POINT_PORT = 0;
+
+
 }
