@@ -17,6 +17,9 @@ using namespace boost;
 #define DEBUG(x)
 #endif
 
+typedef map<string, shared_ptr<Peer> > PeerMap;
+// associates ID with peer
+
 shared_ptr<Peer> create_local_peer();
 
 void parse_input(string& input, string& command, string& argument);

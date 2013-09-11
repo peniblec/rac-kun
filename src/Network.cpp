@@ -1,3 +1,4 @@
+
 #include <boost/bind.hpp>
 
 #include "DataMessage.hpp"
@@ -8,7 +9,6 @@
 #include "ReadyNotifMessage.hpp"
 
 #include "Network.hpp"
-#include "Utils.hpp"
 
 Network::Network(shared_ptr<asio::io_service> _ios,
                  shared_ptr<tcp::resolver> _resolver,
@@ -252,7 +252,7 @@ void Network::handle_incoming_message(const system::error_code& error,
       }
 
 
-      switch (message->get_type()) {
+      switch (message->type) {
 
       case MESSAGE_TYPE_JOIN: {
         // if we've been alone so far, consider we constitute a functional network
@@ -269,14 +269,14 @@ void Network::handle_incoming_message(const system::error_code& error,
 
         JoinMessage* msg = dynamic_cast<JoinMessage*>(message);
 
-        emitter->init( msg->get_id(), msg->get_key() );
+        emitter->init( msg->id, msg->pub_k );
         emitter->set_state( PEER_STATE_JOINING );
         log_message(message, emitter);
 
         if (join_token)
-          answer_join_request(emitter, msg->get_port());
+          answer_join_request(emitter, msg->port);
         else
-          new_peers[ emitter->get_address() ].second = msg->get_port();
+          new_peers[ emitter->get_address() ].second = msg->port;
 
         
       }
@@ -292,10 +292,10 @@ void Network::handle_incoming_message(const system::error_code& error,
         JoinNotifMessage* msg = dynamic_cast<JoinNotifMessage*>(message);
         // TODO: if ID is valid
         join_token = false;
-        shared_ptr<Peer> new_peer = connect_peer( msg->get_ip(),
-                                                  itos(msg->get_port()) );
+        shared_ptr<Peer> new_peer = connect_peer( msg->ip,
+                                                  itos(msg->port) );
 
-        new_peer->init( msg->get_id(), msg->get_key() );
+        new_peer->init( msg->id, msg->pub_k );
         new_peer->set_state(PEER_STATE_JOINING);
 
         handle_join(new_peer);        
@@ -317,7 +317,7 @@ void Network::handle_incoming_message(const system::error_code& error,
         JoinAckMessage* msg = dynamic_cast<JoinAckMessage*>(message);
         // check whether we're joining/readying, maybe?
         
-        emitter->init( msg->get_id(), msg->get_key() );
+        emitter->init( msg->id, msg->pub_k );
         emitter->set_state(PEER_STATE_CONNECTED);
         new_peers.erase( emitter->get_address() );
         peers[ emitter->get_id() ] = emitter;
@@ -371,7 +371,7 @@ void Network::handle_incoming_message(const system::error_code& error,
         
         cout << "Peer " << ( emitter->is_known() ? emitter->get_id()
                              : string("@" + emitter->get_address()) )
-             << " sent this:\n\t" << msg->get_data() << endl;
+             << " sent this:\n\t" << msg->data << endl;
       }
         break;
         
@@ -446,7 +446,7 @@ void Network::print_logs()
   for (LogIndexTime::iterator it=t_logs.begin(); it!=t_logs.end(); it++) {
     Message* m = parse_message( it->message );
 
-    cout << "Received/sent a " << MessageTypeNames[ m->get_type() ] << endl;
+    cout << "Received/sent a " << MessageTypeNames[ m->type ] << endl;
     
     map<string, int> preds = it->control;
     for (map<string, int>::iterator jt=preds.begin(); jt!=preds.end(); jt++) {
@@ -475,7 +475,7 @@ void Network::log_message(Message* message, shared_ptr<Peer> emitter)
       it = pair.first;
   }
             
-  if ( /*!emitter->is_local() &&*/ it!=h_logs.end() )
+  if ( !emitter->is_local() && it!=h_logs.end() )
     h_logs.modify(it, ack_message(emitter));
 }
 

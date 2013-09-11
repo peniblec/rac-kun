@@ -28,16 +28,6 @@ void Message::make_stamp(string peer_id)
   stamp = make_hash(input);
 }
 
-void Message::set_stamp(string _stamp)
-{
-  stamp = _stamp;
-}
-
-const Message::Type Message::get_type()
-{
-  return type;
-}
-
 bool Message::is_broadcast()
 {
   return ( type == MESSAGE_TYPE_JOIN_NOTIF
@@ -52,7 +42,3 @@ string Message::serialize()
   return s;
 }
 
-// void Message::display()
-// {
-//   cout << "Empty message" << endl;
-// }

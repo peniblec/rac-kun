@@ -10,9 +10,8 @@ struct MessageParseException : public std::exception {
   { return "Could not parse message"; }
 };
 
-class Message
+struct Message
 {
-public:
   typedef MessageType Type;
 
   virtual ~Message();
@@ -23,14 +22,14 @@ public:
   void make_stamp(string peer_id);
   void set_stamp(string _stamp);
 
-  const Type get_type();
-
   bool is_broadcast();
+
+
+  const Type type;
+  string stamp;
 
 protected:
   Message(Type _type);
-  Type type;
-  string stamp;
 };
 
 

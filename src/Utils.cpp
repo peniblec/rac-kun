@@ -143,7 +143,7 @@ Message* parse_message(string msg)
     throw MessageParseException();
   }
   string stamp(msg, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
-  m->set_stamp(stamp);
+  m->stamp = stamp;
 
   return m;
   // }

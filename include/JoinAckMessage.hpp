@@ -5,25 +5,15 @@
 
 #include "Message.hpp"
 
-class JoinAckMessage : public Message
+struct JoinAckMessage : Message
 {
-public:
   JoinAckMessage(string _id, string _pub_k);
   
   string serialize();
   void display();
 
-  const string get_id() {
-    return id;
-  }
-
-  const string get_key() {
-    return pub_k;
-  }
-  
-private:
-  string id;
-  string pub_k;
+  const string id;
+  const string pub_k;
 };
 
 

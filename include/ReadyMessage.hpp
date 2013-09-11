@@ -6,15 +6,13 @@
 #include "Message.hpp"
 
 
-class ReadyMessage : public Message
+struct ReadyMessage : Message
 {
-public:
   ReadyMessage();
   
   string serialize();
   void display();
 
-private:
 };
 
 

@@ -8,12 +8,12 @@
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/identity.hpp>
 #include <map>
-#include <set>
 
 #include "Config.hpp"
 #include "Message.hpp"
 #include "Peer.hpp"
 #include "Ring.hpp"
+#include "Utils.hpp"
 
 #define LOG_INDEX_TIME 0
 #define LOG_INDEX_HASH 1
@@ -25,22 +25,20 @@ using boost::asio::ip::tcp;
 class Network
 {
 private:
-  typedef map<string, shared_ptr<Peer> > PeerMap;
-  // associates ID with peer
   typedef map<string, pair<shared_ptr<Peer>, unsigned short> > JoinMap;
   // associates IP with peer/listening port
 
   struct MessageLog {
     string message;
     map<string, int> control;
+    // associates a peer ID to the number of times we received this message
+    // from this peer
 
     bool operator<(const MessageLog ml)const {
       string my_stamp(message, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
       string its_stamp(ml.message, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
 
       return my_stamp<its_stamp;
-
-      // if that turns out to be a bottleneck, try this:
       // return ( memcmp( (message.c_str())[MSG_STAMP_OFFSET],
       //                  (ml.message.c_str())[MSG_STAMP_OFFSET],
       //                  MSG_STAMP_LENGTH ) < 0 );
@@ -272,9 +270,16 @@ private:
   PeerMap peers;
   shared_ptr<Peer> local_peer;
 
+  // map<string, shared_ptr<Group> > groups;
+  // shared_ptr<Group> local_group;
+
   JoinMap new_peers;
   bool join_token;
   
+  // map<string, PeerMap> predecessors;
+  // map<string, PeerMap> successors;
+  // // maps group ID with channel predecessors/successors
+  // // map[ local_group_id ] = group pred/succ
   PeerMap predecessors;
   PeerMap successors;
 
@@ -284,7 +289,7 @@ private:
 
   map<string, shared_ptr<asio::deadline_timer> > ready_timers;
   map<string, shared_ptr<asio::deadline_timer> > join_timers;
-  
+
   Ring rings[RINGS_NB];
   
 };

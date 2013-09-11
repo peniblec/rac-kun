@@ -6,15 +6,12 @@
 #include "Message.hpp"
 
 
-class ReadyNotifMessage : public Message
+struct ReadyNotifMessage : Message
 {
-public:
   ReadyNotifMessage();
   
   string serialize();
   void display();
-
-private:
 };
 
 

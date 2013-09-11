@@ -5,20 +5,14 @@
 
 #include "Message.hpp"
 
-class DataMessage : public Message
+struct DataMessage : Message
 {
-public:
   DataMessage(string _data);
   
   string serialize();
   void display();
 
-  const string get_data() {
-    return data;
-  }
-
-private:
-  string data;
+  const string data;
 };
 
 
