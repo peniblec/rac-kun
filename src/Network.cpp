@@ -295,7 +295,7 @@ void Network::handle_incoming_message(const system::error_code& error,
         shared_ptr<Peer> new_peer = connect_peer( msg->ip,
                                                   itos(msg->port) );
 
-        new_peer->init( msg->id, msg->pub_k );
+        new_peer->init( msg->peer_id, msg->pub_k );
         new_peer->set_state(PEER_STATE_JOINING);
 
         handle_join(new_peer);        

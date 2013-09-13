@@ -24,11 +24,12 @@ shared_ptr<Peer> create_local_peer();
 
 void parse_input(string& input, string& command, string& argument);
 
-string itos(int i);
-string ltos(long l);
+template<typename T> string itos(T t);
 
 Message* parse_message(string msg);
 
 string make_hash(string input);
+
+long long milliseconds_since_epoch();
 
 #endif

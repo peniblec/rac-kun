@@ -37,19 +37,22 @@ enum MessageType {
 
 extern const char* MessageTypeNames[MESSAGE_TYPE_END];
 
-
 extern const unsigned int MSG_STAMP_LENGTH;
 extern const unsigned int MSG_STAMP_OFFSET;
 
 extern const unsigned int DATA_MESSAGE_OFFSET;
 
 extern const unsigned int ID_LENGTH;
+extern const unsigned int GROUP_ID_LENGTH;
 
 extern const unsigned int JOIN_MSG_ID_OFFSET;
 extern const unsigned int JOIN_MSG_ID_LENGTH;
 
 extern const unsigned int JOIN_MSG_KEY_OFFSET;
 extern const unsigned int JOIN_MSG_KEY_LENGTH;
+
+extern const unsigned int JOIN_NOTIF_GROUP_ID_OFFSET;
+extern const unsigned int JOIN_NOTIF_GROUP_ID_LENGTH;
 
 extern const unsigned int JOIN_NOTIF_ENDPOINT_OFFSET;
 

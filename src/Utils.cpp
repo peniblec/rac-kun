@@ -1,6 +1,7 @@
 #include <boost/asio.hpp>
 #include <cryptopp/sha.h>
 #include <sstream>
+#include <sys/time.h>
 
 #include "Utils.hpp"
 
@@ -39,22 +40,17 @@ void parse_input(string& input, string& command, string& argument)
   argument = input.substr(space+1, input.size());
 }
 
-string itos(int i)
+template<typename T> string itos(T t)
 {
   stringstream ss;
-  ss << i;
+  ss << t;
   string ret = ss.str();
-  return ret;
+  return ret;  
 }
-
-string ltos(long l)
-{
-  stringstream ss;
-  ss << l;
-  string ret = ss.str();
-  return ret;
-}
-
+template string itos<unsigned short>(unsigned short us);
+template string itos<int>(int i);
+template string itos<long>(long l);
+template string itos<long long>(long long ll);
 
 Message* parse_message(string msg)
 {
@@ -171,4 +167,12 @@ string make_hash(string input)
   // (char*) constructor will truncate after the first null byte
 
   return output;
+}
+
+long long milliseconds_since_epoch()
+{
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  long long now = ((long long)tv.tv_sec)*1000 + tv.tv_usec/1000;
+  return now;
 }

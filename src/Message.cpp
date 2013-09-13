@@ -1,5 +1,4 @@
 #include <iostream>
-#include <sys/time.h>
 
 #include "Message.hpp"
 #include "Utils.hpp"
@@ -17,12 +16,7 @@ void Message::make_stamp(string peer_id)
 {
   string input = peer_id;
 
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  long now = (tv.tv_sec*1000 + tv.tv_usec/1000);
-  // TODO: check whether long will work on most machines
-
-  input.append( ltos(now) );
+  input.append( itos(milliseconds_since_epoch()) );
   input.push_back( (char)type );
 
   stamp = make_hash(input);
