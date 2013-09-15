@@ -10,6 +10,7 @@
 #include <map>
 
 #include "Config.hpp"
+#include "Group.hpp"
 #include "Message.hpp"
 #include "Peer.hpp"
 #include "Ring.hpp"
@@ -152,22 +153,6 @@ public:
 
 
 
-  // Ring-related methods
-
-  /* add_peer_to_rings:
-     - place the new peer at the right place among the rings
-     - check whether predecessors/successors changed
-
-     - p: the peer to add to the rings
-   */
-  void add_peer_to_rings(shared_ptr<Peer> p);
-
-  /* update_my_neighbours:
-     - called whenever a peer is added/removed from the rings
-     - finds all of the local peer's predecessors and successors
-   */
-  void update_my_neighbours();
-
   // Message-sending-related methods
 
   /* broadcast:
@@ -270,18 +255,18 @@ private:
   PeerMap peers;
   shared_ptr<Peer> local_peer;
 
-  // map<string, shared_ptr<Group> > groups;
-  // shared_ptr<Group> local_group;
+  map<string, shared_ptr<Group> > groups;
+  shared_ptr<Group> local_group;
 
   JoinMap new_peers;
   bool join_token;
   
-  // map<string, PeerMap> predecessors;
-  // map<string, PeerMap> successors;
-  // // maps group ID with channel predecessors/successors
-  // // map[ local_group_id ] = group pred/succ
-  PeerMap predecessors;
-  PeerMap successors;
+  map<string, PeerMap> predecessors;
+  map<string, PeerMap> successors;
+  // maps group ID with channel predecessors/successors
+  // map[ local_group_id ] = group pred/succ
+  // PeerMap predecessors;
+  // PeerMap successors;
 
   History logs; // sorted with Message.stamp
   LogIndexHash& h_logs;
@@ -290,7 +275,7 @@ private:
   map<string, shared_ptr<asio::deadline_timer> > ready_timers;
   map<string, shared_ptr<asio::deadline_timer> > join_timers;
 
-  Ring rings[RINGS_NB];
+  // Ring rings[RINGS_NB];
   
 };
 

@@ -16,8 +16,6 @@ Network::Network(shared_ptr<asio::io_service> _ios,
   : io_service(_ios), resolver(_resolver), local_peer(p), join_token(true),
     h_logs( logs.get<LOG_INDEX_HASH>() ), t_logs( logs.get<LOG_INDEX_TIME>() )
 {
-  for (int i=0; i<RINGS_NB; i++)
-    rings[i] = Ring(i);
 }
 
 void Network::add_new_peer(shared_ptr<Peer> p)
@@ -28,39 +26,6 @@ void Network::add_new_peer(shared_ptr<Peer> p)
                                       asio::placeholders::error,
                                       asio::placeholders::bytes_transferred, p);
   p->start_listening(listen_handler);
-}
-
-void Network::add_peer_to_rings(shared_ptr<Peer> p)
-{
-  for (int i=0; i<RINGS_NB; i++) {
-
-    rings[i].add_peer(p);
-  }
-  update_my_neighbours();
-}
-
-void Network::update_my_neighbours()
-{
-  PeerMap preds, succs;
-  shared_ptr<Peer> p;
-  try {
-    for (int i=0; i<RINGS_NB; i++) {
-    
-      p = rings[i].get_predecessor( local_peer );
-      preds.insert( pair<string, shared_ptr<Peer> >( p->get_id(), p ) );
-
-      p = rings[i].get_successor( local_peer );
-      succs.insert( pair<string, shared_ptr<Peer> >( p->get_id(), p ) );
-    }
-    predecessors = preds;
-    successors = succs;
-  }
-  catch (PeerNotFoundException& e) { 
-    DEBUG("Network::update_my_neighbours: " << e.what());
-    predecessors.clear();
-    successors.clear();
-  }
-
 }
 
 void Network::join(string entry_ip, string entry_port)
@@ -105,8 +70,9 @@ void Network::broadcast(Message* message, bool add_stamp)
     message->make_stamp( local_peer->get_id() );
   string msg(message->serialize());
   
+  PeerMap succs = successors[local_group->get_id()];
   PeerMap::iterator it;
-  for (it=successors.begin(); it!=successors.end(); it++) {
+  for (it=succs.begin(); it!=succs.end(); it++) {
     it->second->send(msg);
   }
   log_message( message, local_peer );
@@ -155,8 +121,8 @@ void Network::send_ready(const system::error_code& error, shared_ptr<Peer> peer)
 void Network::answer_join_request(shared_ptr<Peer> peer, unsigned short port)
 {
   join_token = false;
-  Message* notif = new JoinNotifMessage( peer->get_id(), peer->get_key(),
-                                         peer->get_address(), port );
+  Message* notif = new JoinNotifMessage( local_group->get_id(), peer->get_id(),
+                                         peer->get_key(), peer->get_address(), port );
 
   broadcast(notif, true);
   delete notif;
@@ -206,10 +172,24 @@ void Network::handle_disconnect(shared_ptr<Peer> p)
    DEBUG("Peer @" << p->get_address() << " disconnected.");
     if ( peers.erase( p->get_id() ) ) {
 
-      for (int i=0; i<RINGS_NB; i++) {
-        rings[i].remove_peer(p);
+      bool found(false);
+      map<string, shared_ptr<Group> >::iterator it = groups.begin();
+
+      while (!found && it!=groups.end()) {
+
+        try {
+          it->second->remove_peer(p);
+          found = true;
+        }
+        catch (PeerNotFoundException& e) {
+          it++;
+        }
       }
-      update_my_neighbours();
+
+      if (found)
+        it->second->update_neighbours(predecessors[ it->first ],
+                                      successors[ it->first ],
+                                      local_peer);
     }
     else {
       new_peers.erase( p->get_address() );
@@ -258,7 +238,14 @@ void Network::handle_incoming_message(const system::error_code& error,
         // if we've been alone so far, consider we constitute a functional network
         if (local_peer->get_state() != PEER_STATE_CONNECTED) {
           local_peer->set_state(PEER_STATE_CONNECTED);
-          add_peer_to_rings(local_peer);
+
+          string concat( local_peer->get_id() + itos(milliseconds_since_epoch()) ) ;
+          local_group = shared_ptr<Group>(new Group(make_hash(concat)));
+          groups.insert( pair<string, shared_ptr<Group> >( local_group->get_id(),
+                                                           local_group ) );
+          
+          local_group->add_peer(local_peer);
+          
         }
 
         // As the entry point for the emitter, we will
@@ -317,10 +304,22 @@ void Network::handle_incoming_message(const system::error_code& error,
         JoinAckMessage* msg = dynamic_cast<JoinAckMessage*>(message);
         // check whether we're joining/readying, maybe?
         
-        emitter->init( msg->id, msg->pub_k );
+        if (groups.find( msg->group_id ) == groups.end()) {
+          shared_ptr<Group> new_group = shared_ptr<Group>(new Group(msg->group_id));
+          groups.insert( pair<string, shared_ptr<Group> >(msg->group_id, new_group) );
+
+          if (!local_group)
+            local_group = new_group;
+        }
+          
+
+        emitter->init( msg->peer_id, msg->pub_k );
         emitter->set_state(PEER_STATE_CONNECTED);
+
         new_peers.erase( emitter->get_address() );
         peers[ emitter->get_id() ] = emitter;
+
+        groups[msg->group_id]->add_peer(emitter);
 
         log_message( message, emitter );
         
@@ -333,10 +332,11 @@ void Network::handle_incoming_message(const system::error_code& error,
         // they all have been sending us JOIN_ACK so that now,
         // we can compute our position on the rings
 
-        add_peer_to_rings(local_peer);
-        for (PeerMap::iterator it = peers.begin(); it!=peers.end(); it++) {
-          add_peer_to_rings(it->second);
-        }
+        local_group->add_peer(local_peer);
+        local_group->update_neighbours( predecessors[local_group->get_id()],
+                                        successors[local_group->get_id()],
+                                        local_peer );
+
 
         local_peer->set_state(PEER_STATE_CONNECTED);
 
@@ -345,8 +345,12 @@ void Network::handle_incoming_message(const system::error_code& error,
         notif->make_stamp(local_peer->get_id());
         string notif_msg = notif->serialize();
 
-        PeerMap directs(predecessors);
-        directs.insert( successors.begin(), successors.end() );
+        PeerMap preds = predecessors[local_group->get_id()];
+        PeerMap succs = successors[local_group->get_id()];
+
+        PeerMap directs(preds);
+        directs.insert( succs.begin(), succs.end() );
+
         for (PeerMap::iterator it=directs.begin(); it!=directs.end(); it++)
           it->second->send(notif_msg);
 
@@ -395,21 +399,29 @@ void Network::handle_incoming_message(const system::error_code& error,
 
 void Network::handle_join(shared_ptr<Peer> peer)
 {
+  // TODO: send group to this function
+  shared_ptr<Group> group = local_group;
+
   peers[ peer->get_id() ] = peer;
 
-  add_peer_to_rings(peer);
+  group->add_peer(peer); 
+
+  PeerMap& preds = predecessors[ group->get_id() ];
+  PeerMap& succs = successors[ group->get_id() ];  
+  group->update_neighbours(preds, succs, local_peer);
 
   // - add to rings
   // - send join ack
   // - if direct pred/succ, wait for READY before setting state to CONNECTED
   // - else, wait for 2T before setting to CONNECTED
 
-  Message* ack = new JoinAckMessage( local_peer->get_id(), local_peer->get_key() );
+  Message* ack = new JoinAckMessage( group->get_id(),
+                                     local_peer->get_id(), local_peer->get_key() );
   send(ack, peer);
   delete ack;
 
-  if ( predecessors.find(peer->get_id()) == predecessors.end()
-       && successors.find(peer->get_id()) == successors.end() ) {
+  if ( preds.find(peer->get_id()) == preds.end()
+       && succs.find(peer->get_id()) == succs.end() ) {
 
     shared_ptr<asio::deadline_timer> t
       (new asio::deadline_timer(*io_service, posix_time::seconds(JOIN_COMPLETE_TIME)));
@@ -422,19 +434,29 @@ void Network::handle_join(shared_ptr<Peer> peer)
 
 void Network::print_rings()
 {
-  for (int i=0; i<RINGS_NB; i++) {
+  map<string, shared_ptr<Group> >::iterator g_it;
+  for (g_it = groups.begin(); g_it != groups.end(); g_it++) {
 
-    rings[i].display();
+    cout << "\tIn group ";
+    display_chars(g_it->first, 10);
+    cout << " :" << endl;
+    g_it->second->display_rings();
+
+    PeerMap preds = predecessors[ g_it->first ];
+    PeerMap succs = successors[ g_it->first ];
+
+    cout << "My predecessors are:" << endl;
+
+    for (PeerMap::iterator it=preds.begin(); it!=preds.end(); it++) {
+      cout << "- " << it->second->get_id() << endl;
+    }
+    cout << "My successors are:" << endl;
+    for (PeerMap::iterator it=succs.begin(); it!=succs.end(); it++) {
+      cout << "- " << it->second->get_id() << endl;
+    }
+
     cout << endl;
-  }
 
-  cout << "My predecessors are:" << endl;
-  for (PeerMap::iterator it=predecessors.begin(); it!=predecessors.end(); it++) {
-    cout << "- " << it->second->get_id() << endl;
-  }
-  cout << "My successors are:" << endl;
-  for (PeerMap::iterator it=successors.begin(); it!=successors.end(); it++) {
-    cout << "- " << it->second->get_id() << endl;
   }
 }
 
@@ -466,10 +488,11 @@ void Network::log_message(Message* message, shared_ptr<Peer> emitter)
 
     // make a list of peers we expect to receive this message from
 
-    if (message->is_broadcast())
-      for (PeerMap::iterator p=predecessors.begin(); p!=predecessors.end(); p++)
+    if (message->is_broadcast()) {
+      PeerMap preds = predecessors[ local_group->get_id() ];
+      for (PeerMap::iterator p=preds.begin(); p!=preds.end(); p++)
         ml.control[ p->second->get_id() ] = 0;
-
+    }
     pair<LogIndexHash::iterator, bool> pair = h_logs.insert( ml );
     if (pair.second)
       it = pair.first;

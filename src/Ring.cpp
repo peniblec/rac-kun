@@ -1,5 +1,5 @@
 #include "Ring.hpp"
-#include "Utils.hpp"
+
 
 Ring::Ring(int _index)
   : index(_index)
@@ -24,13 +24,17 @@ void Ring::add_peer(shared_ptr<Peer> p)
 
 void Ring::remove_peer(shared_ptr<Peer> p)
 {
-  string key = create_key( p->get_id() );
-  ring.erase( key );
+  PeerMap::iterator it = find_peer(p);
+
+  if ( it!=ring.end() )
+    ring.erase(it);
+  else
+    throw PeerNotFoundException();
 }
 
 shared_ptr<Peer> Ring::get_successor(shared_ptr<Peer> p)
 {
-  RingMap::iterator it = find_peer(p);
+  PeerMap::iterator it = find_peer(p);
   
   if ( it!= ring.end() && ring.size()>1 ) {
 
@@ -43,7 +47,7 @@ shared_ptr<Peer> Ring::get_successor(shared_ptr<Peer> p)
 
 shared_ptr<Peer> Ring::get_predecessor(shared_ptr<Peer> p)
 {
-  RingMap::iterator it = find_peer(p);
+  PeerMap::iterator it = find_peer(p);
  
   if ( it!= ring.end() && ring.size()>1 )
     return ( it != ring.begin() ? (--it)->second : ring.rbegin()->second );
@@ -54,7 +58,7 @@ shared_ptr<Peer> Ring::get_predecessor(shared_ptr<Peer> p)
 
 void Ring::display()
 {
-  RingMap::iterator it;
+  PeerMap::iterator it;
 
   cout << "Ring index: " << index << endl;
   for (it=ring.begin(); it!=ring.end(); it++) {
@@ -68,9 +72,9 @@ void Ring::display()
   }
 }
 
-Ring::RingMap::iterator Ring::find_peer(shared_ptr<Peer> p)
+PeerMap::iterator Ring::find_peer(shared_ptr<Peer> p)
 {
   string key = create_key( p->get_id() );
-  RingMap::iterator it = ring.find(key);
+  PeerMap::iterator it = ring.find(key);
   return it;
 }

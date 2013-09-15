@@ -7,7 +7,7 @@
 
 struct JoinNotifMessage : Message
 {
-  JoinNotifMessage(/*string _group_id, */string _peer_id, string _pub_k,
+  JoinNotifMessage(string _group_id, string _peer_id, string _pub_k,
                    string _ip, unsigned short _port);
   
   string serialize();

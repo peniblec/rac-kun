@@ -11,7 +11,7 @@ LIBS_INC=/usr/include
 INCLUDE=-I$(INC) -I$(LIBS_INC)
 
 MESSAGES_OBJ=Message.o DataMessage.o JoinMessage.o JoinNotifMessage.o JoinAckMessage.o ReadyMessage.o ReadyNotifMessage.o
-OBJ=Main.o Config.o Listener.o $(MESSAGES_OBJ) Peer.o Network.o Ring.o Utils.o
+OBJ=Main.o Config.o Group.o Listener.o $(MESSAGES_OBJ) Peer.o Network.o Ring.o Utils.o
 EXE=node
 
 
@@ -20,6 +20,7 @@ $(EXE): $(OBJ)
 
 Main.o : $(SRC)/Main.cpp $(INC)/Config.hpp
 Config.o : $(SRC)/Config.cpp $(INC)/Config.hpp
+Group.o : $(SRC)/Group.cpp $(INC)/Group.hpp $(INC)/Config.hpp
 Listener.o : $(SRC)/Listener.cpp $(INC)/Listener.hpp $(INC)/Config.hpp
 Message.o : $(SRC)/Message.cpp $(INC)/Message.hpp $(INC)/Config.hpp
 DataMessage.o : $(SRC)/DataMessage.cpp $(INC)/DataMessage.hpp $(INC)/Config.hpp

@@ -66,11 +66,12 @@ int main(int argc, char** argv) {
     else if ( command.compare(COMMAND_HELP)==0 ) {
 
       cout << "What to do?" << endl
-           << "send <message>\tSend <message> to all peers" << endl
-           << "join <address>\tJoin a session using <address> as an entry point" << endl
-           << "broadcast <message>\tUse rings to broadcast a message" << endl
-           << "rings\tDisplay the constitution of the current rings" << endl
-           << "logs\tPrint all the messages received up until now" << endl;
+           << "send <arg>\n\tSend <arg> to all peers" << endl
+           << "join <arg>\n\tJoin a session using <arg> as an entry point" << endl
+           << "\twhere <arg> is IP:port or hostname:port" << endl
+           << "broadcast <arg>\n\tUse rings to broadcast a message" << endl
+           << "rings\n\tDisplay the constitution of the current rings" << endl
+           << "logs\n\tPrint all the messages received up until now" << endl;
     }
     else
       cout << "Invalid command." << endl;

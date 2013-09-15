@@ -6,6 +6,7 @@
 
 #include "Config.hpp"
 #include "Peer.hpp"
+#include "Utils.hpp"
 
 using namespace boost;
 
@@ -30,13 +31,10 @@ public:
   void display();  
 
 private:
-  typedef map<string, shared_ptr<Peer> > RingMap;
-
-  RingMap::iterator find_peer(shared_ptr<Peer> p);
+  PeerMap::iterator find_peer(shared_ptr<Peer> p);
 
   int index;
-
-  RingMap ring;
+  PeerMap ring;
 };
 
 

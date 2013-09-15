@@ -32,4 +32,6 @@ string make_hash(string input);
 
 long long milliseconds_since_epoch();
 
+void display_chars(string s, unsigned int n);
+
 #endif

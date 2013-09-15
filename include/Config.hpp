@@ -51,8 +51,9 @@ extern const unsigned int JOIN_MSG_ID_LENGTH;
 extern const unsigned int JOIN_MSG_KEY_OFFSET;
 extern const unsigned int JOIN_MSG_KEY_LENGTH;
 
+extern const unsigned int JOIN_REQUEST_PORT_OFFSET;
+
 extern const unsigned int JOIN_NOTIF_GROUP_ID_OFFSET;
-extern const unsigned int JOIN_NOTIF_GROUP_ID_LENGTH;
 
 extern const unsigned int JOIN_NOTIF_ENDPOINT_OFFSET;
 

@@ -45,7 +45,7 @@ template<typename T> string itos(T t)
   stringstream ss;
   ss << t;
   string ret = ss.str();
-  return ret;  
+  return ret;
 }
 template string itos<unsigned short>(unsigned short us);
 template string itos<int>(int i);
@@ -78,7 +78,7 @@ Message* parse_message(string msg)
       string id(msg, JOIN_MSG_ID_OFFSET, JOIN_MSG_ID_LENGTH);
       string pub_k(msg, JOIN_MSG_KEY_OFFSET, JOIN_MSG_KEY_LENGTH);
 
-      string endpoint(msg, JOIN_NOTIF_ENDPOINT_OFFSET);
+      string endpoint(msg, JOIN_REQUEST_PORT_OFFSET);
 
       unsigned short port;
       istringstream(endpoint) >> port;
@@ -88,25 +88,27 @@ Message* parse_message(string msg)
     break;
   case MESSAGE_TYPE_JOIN_NOTIF:
     {
-      string id(msg, JOIN_MSG_ID_OFFSET, JOIN_MSG_ID_LENGTH);
+      string peer_id(msg, JOIN_MSG_ID_OFFSET, JOIN_MSG_ID_LENGTH);
       string pub_k(msg, JOIN_MSG_KEY_OFFSET, JOIN_MSG_KEY_LENGTH);
-      string endpoint(msg, JOIN_NOTIF_ENDPOINT_OFFSET);
+      string group_id(msg, JOIN_NOTIF_GROUP_ID_OFFSET, GROUP_ID_LENGTH);
 
+      string endpoint(msg, JOIN_NOTIF_ENDPOINT_OFFSET);
       int colon = endpoint.find(':');
 
       string ip( endpoint.substr(0, colon) );
       unsigned short port;
       istringstream ( endpoint.substr( colon+1, endpoint.size() ) ) >> port;
  
-      m = new JoinNotifMessage(id, pub_k, ip, port);
+      m = new JoinNotifMessage(group_id, peer_id, pub_k, ip, port);
     }
     break;
   case MESSAGE_TYPE_JOIN_ACK:
     {
-      string id(msg, JOIN_MSG_ID_OFFSET, JOIN_MSG_ID_LENGTH);
+      string peer_id(msg, JOIN_MSG_ID_OFFSET, JOIN_MSG_ID_LENGTH);
       string pub_k(msg, JOIN_MSG_KEY_OFFSET, JOIN_MSG_KEY_LENGTH);
+      string group_id(msg, JOIN_NOTIF_GROUP_ID_OFFSET, GROUP_ID_LENGTH);
 
-      m = new JoinAckMessage(id, pub_k);
+      m = new JoinAckMessage(group_id, peer_id, pub_k);
     }
     break;
   case MESSAGE_TYPE_READY:
@@ -175,4 +177,12 @@ long long milliseconds_since_epoch()
   gettimeofday(&tv, NULL);
   long long now = ((long long)tv.tv_sec)*1000 + tv.tv_usec/1000;
   return now;
+}
+
+void display_chars(string s, unsigned int n)
+{
+  n = ( n <= s.size() ? n : s.size() );
+
+  for (unsigned int i = 0; i<n; i++)
+    cout << (int) ((unsigned char) s[i]) << (i+1==s.size() ? "." : i+1==n ? "..." : "-");
 }
