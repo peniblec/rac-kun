@@ -28,6 +28,13 @@ bool Message::is_broadcast()
            || type == MESSAGE_TYPE_DATA );
 }
 
+void Message::display()
+{
+  cout << MessageTypeNames[ type ] << endl;
+  display_chars( stamp, 10 );
+  cout << endl;
+}
+
 string Message::serialize()
 {
   string s;

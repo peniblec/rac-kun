@@ -17,7 +17,7 @@ struct Message
   virtual ~Message();
 
   virtual string serialize();
-  virtual void display() = 0;
+  virtual void display();
 
   void make_stamp(string peer_id);
   void set_stamp(string _stamp);

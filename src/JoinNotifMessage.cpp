@@ -26,6 +26,12 @@ string JoinNotifMessage::serialize()
 
 void JoinNotifMessage::display()
 {
-  cout << "Peer with id " << peer_id << " (" << ip << ":" << port
-       << ") and key " << pub_k << " wants to join." << endl;
+  Message::display();
+  cout << "\tGroup ID: ";
+  display_chars(group_id, 10);
+  cout << endl;
+  cout << "\tPeer ID: " << peer_id << endl;
+  cout << "\tPublic key: " << pub_k << endl;
+  cout << "\tIP: " << ip << endl;
+  cout << "\tPort: " << port << endl;
 }

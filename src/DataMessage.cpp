@@ -16,5 +16,6 @@ string DataMessage::serialize()
 
 void DataMessage::display()
 {
-  cout << "Data from this message: " << data << endl;
+  Message::display();
+  cout << "\tData: " << data << endl;
 }

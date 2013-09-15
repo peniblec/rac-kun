@@ -462,18 +462,16 @@ void Network::print_rings()
 
 void Network::print_logs()
 {
-  cout << "Logs are " << sizeof(logs) << " bytes for "
-       << logs.size() << " elements." << endl;
-
   for (LogIndexTime::iterator it=t_logs.begin(); it!=t_logs.end(); it++) {
     Message* m = parse_message( it->message );
+    m->display();
+    cout << "Received from:" << endl;
 
-    cout << "Received/sent a " << MessageTypeNames[ m->type ] << endl;
-    
     map<string, int> preds = it->control;
     for (map<string, int>::iterator jt=preds.begin(); jt!=preds.end(); jt++) {
       cout << "- " << jt->first << ": " << jt->second << endl;
     }
+    cout << endl;
     delete m;
   }
 }

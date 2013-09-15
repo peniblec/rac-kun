@@ -15,5 +15,5 @@ string ReadyMessage::serialize()
 
 void ReadyMessage::display()
 {
-  cout << "Peers are ready to use you as a node." << endl;
+  Message::display();
 }

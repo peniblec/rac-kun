@@ -15,5 +15,5 @@ string ReadyNotifMessage::serialize()
 
 void ReadyNotifMessage::display()
 {
-  cout << "Emitter is now ready to be used as relay." << endl;
+  Message::display();
 }

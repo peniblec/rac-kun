@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "JoinAckMessage.hpp"
+#include "Utils.hpp"
 
 JoinAckMessage::JoinAckMessage(string _group_id, string _peer_id, string _key)
   : Message(MESSAGE_TYPE_JOIN_ACK),
@@ -19,5 +20,10 @@ string JoinAckMessage::serialize()
 
 void JoinAckMessage::display()
 {
-  cout << "Peer " << peer_id << " with key " << pub_k << " has added us to its view."  << endl;
+  Message::display();
+  cout << "\tGroup ID: ";
+  display_chars(group_id, 10);
+  cout << endl;
+  cout << "\tPeer ID: " << peer_id << endl;
+  cout << "\tPublic key: " << pub_k << endl;
 }

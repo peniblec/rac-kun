@@ -19,6 +19,8 @@ string JoinMessage::serialize()
 
 void JoinMessage::display()
 {
-  cout << "Peer with id " << id << " and key " << pub_k
-       << " wants to join; listening port: " << port << "." << endl;
+  Message::display();
+  cout << "\tPeer ID: " << id << endl;
+  cout << "\tPublic key: " << pub_k << endl;
+  cout << "\tPort: " << port << endl;
 }
