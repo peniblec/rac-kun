@@ -64,13 +64,13 @@ shared_ptr<Peer> Network::connect_peer(string ip, string port)
   return new_peer;
 }
 
-void Network::broadcast(Message* message, bool add_stamp)
+void Network::broadcast(shared_ptr<Group> group, Message* message, bool add_stamp)
 {
   if (add_stamp)
     message->make_stamp( local_peer->get_id() );
   string msg(message->serialize());
   
-  PeerMap succs = successors[local_group->get_id()];
+  PeerMap succs = successors[group->get_id()];
   PeerMap::iterator it;
   for (it=succs.begin(); it!=succs.end(); it++) {
     it->second->send(msg);
@@ -81,7 +81,7 @@ void Network::broadcast(Message* message, bool add_stamp)
 void Network::broadcast_data(string content)
 {
   DataMessage* data = new DataMessage(content);
-  broadcast(data, true);
+  broadcast(local_group, data, true);
   delete data;
 }
 
@@ -124,11 +124,15 @@ void Network::answer_join_request(shared_ptr<Peer> peer, unsigned short port)
   Message* notif = new JoinNotifMessage( local_group->get_id(), peer->get_id(),
                                          peer->get_key(), peer->get_address(), port );
 
-  broadcast(notif, true);
+  shared_ptr<Group> group = local_group;
+  // TODO: replace with computation based on peer IDs - see RAC III.C.Joining
+
+  broadcast(group, notif, true);
   delete notif;
 
   new_peers.erase( peer->get_address() );
-  handle_join(peer);
+  if (group->get_id() == local_group->get_id())
+    acknowledge_join(peer, group);
 
   shared_ptr<asio::deadline_timer> t
     (new asio::deadline_timer(*io_service, posix_time::seconds(READY_TIME)));
@@ -228,7 +232,7 @@ void Network::handle_incoming_message(const system::error_code& error,
           log_message(message, emitter);
 
         if (message->is_broadcast())
-          broadcast(message);
+          broadcast(local_group, message); // TODO: determine which channel to bcast in
       }
 
 
@@ -277,7 +281,7 @@ void Network::handle_incoming_message(const system::error_code& error,
         // - add it to correct position in rings
 
         JoinNotifMessage* msg = dynamic_cast<JoinNotifMessage*>(message);
-        // TODO: if ID is valid
+        // TODO: check that ID belongs to this group
         join_token = false;
         shared_ptr<Peer> new_peer = connect_peer( msg->ip,
                                                   itos(msg->port) );
@@ -285,7 +289,7 @@ void Network::handle_incoming_message(const system::error_code& error,
         new_peer->init( msg->peer_id, msg->pub_k );
         new_peer->set_state(PEER_STATE_JOINING);
 
-        handle_join(new_peer);        
+        acknowledge_join(new_peer, local_group);
 
         Peer::Handler listen_handler = bind(&Network::handle_incoming_message, this,
                                             asio::placeholders::error,
@@ -397,11 +401,8 @@ void Network::handle_incoming_message(const system::error_code& error,
   }  
 }
 
-void Network::handle_join(shared_ptr<Peer> peer)
+void Network::acknowledge_join(shared_ptr<Peer> peer, shared_ptr<Group> group)
 {
-  // TODO: send group to this function
-  shared_ptr<Group> group = local_group;
-
   peers[ peer->get_id() ] = peer;
 
   group->add_peer(peer); 
@@ -410,7 +411,6 @@ void Network::handle_join(shared_ptr<Peer> peer)
   PeerMap& succs = successors[ group->get_id() ];  
   group->update_neighbours(preds, succs, local_peer);
 
-  // - add to rings
   // - send join ack
   // - if direct pred/succ, wait for READY before setting state to CONNECTED
   // - else, wait for 2T before setting to CONNECTED

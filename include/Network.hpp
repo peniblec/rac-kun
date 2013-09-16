@@ -95,15 +95,15 @@ public:
    */
   void answer_join_request(shared_ptr<Peer> peer, unsigned short port);
 
-  /* handle_join:
-     - called when receiving a join request/notification
+  /* acknowledge_join:
+     - called when receiving a join notification
      - add peer to rings, send him a join acknowledgement
      - if not a direct pred/succ, set up the timer before considering
        them connected
 
      - peer: the new peer joining the system
    */
-  void handle_join(shared_ptr<Peer> peer);
+  void acknowledge_join(shared_ptr<Peer> peer, shared_ptr<Group> group);
 
   /* complete_join:
      - handler called after join timer expired
@@ -164,11 +164,11 @@ public:
          default is false, since when simply passing a message down the rings,
          the ID should not be tampered with
    */
-  void broadcast(Message* message, bool add_stamp=false);
+  void broadcast(shared_ptr<Group> group, Message* message, bool add_stamp=false);
 
   /* broadcast_data:
      - called by UI
-     - create a data message and broadcast it
+     - create a data message and broadcast it to local group
 
      - content: what the user wants to send
    */
