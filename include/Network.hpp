@@ -32,8 +32,8 @@ private:
   struct MessageLog {
     string message;
     map<string, int> control;
-    // associates a peer ID to the number of times we received this message
-    // from this peer
+    // associates a peer ID to the number of times
+    // we received this message from this peer
 
     bool operator<(const MessageLog ml)const {
       string my_stamp(message, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
@@ -47,6 +47,8 @@ private:
     }
   };
 
+  // struct used to modify the content of the multi index container;
+  // adds 1 to the number of times we received a message from _peer
   struct ack_message {
     ack_message(shared_ptr<Peer> _peer)
       : peer(_peer) {}
@@ -58,6 +60,10 @@ private:
     shared_ptr<Peer> peer;
   };
 
+  // multi index container keeping the logs;
+  // may be accessed with two iterators:
+  // - sequential (order of reception)
+  // - associative (using the message stamp as key)
   typedef multi_index_container<
     MessageLog,
     indexed_by<
@@ -72,23 +78,24 @@ private:
 public:
   Network(shared_ptr<asio::io_service> _ios,
           shared_ptr<tcp::resolver> _resolver,
-	  shared_ptr<Peer> p);
+	  shared_ptr<Peer> _local_peerp);
   
   // Join-related methods
 
   /* join:
-     - called by UI
+     - called by UI or during automatic configuration
      - used to join an existing system
 
-     - {entry_ip: ip or hostname; port}: entry point info
+     - entry_ip, entry_port: endpoint info about the entry point
+         (entry_ip may be ip or hostname)
   */
   void join(string entry_ip, string entry_port);
 
   /* answer_join_request:
      - called when receiving a join request and the system is not
        waiting for another node to complete the procedure
-     - broadcast a join notification to the group
-     - setup timer before sending ready message
+     - broadcast a Join Notification to the appropriate group
+     - setup timer before sending Ready message
 
      - peer: the new peer joining the system
      - port: the peer's listening port
@@ -96,8 +103,8 @@ public:
   void answer_join_request(shared_ptr<Peer> peer, unsigned short port);
 
   /* acknowledge_join:
-     - called when receiving a join notification
-     - add peer to rings, send him a join acknowledgement
+     - called when receiving a Join Notification
+     - add peer to group rings, send him a join acknowledgement
      - if not a direct pred/succ, set up the timer before considering
        them connected
 
@@ -156,9 +163,11 @@ public:
   // Message-sending-related methods
 
   /* broadcast:
-     - send a message to all successors
+     - send a message to all successors in the group/channel rings
      - log the message
 
+     - group: if local, message will be broadcast in this group's rings,
+         otherwise, in the channel rings
      - message: the message to send
      - add_stamp: generate a new ID for this message
          default is false, since when simply passing a message down the rings,
@@ -229,6 +238,8 @@ public:
    */
   void log_message(Message* message, shared_ptr<Peer> emitter);
 
+
+
   // Other methods
   
   /* print_rings:
@@ -239,6 +250,7 @@ public:
   void print_rings();
 
   /* print_logs
+     - called by UI
      - print all messages we've received/sent so far, along with who sent it to us
        and how many times
    */
@@ -247,36 +259,39 @@ public:
 
 private:
 
+  /* find_log
+     - find message in log history
+
+     - message: the message to find
+   */
   LogIndexHash::iterator find_log(Message* message);
 
   shared_ptr<asio::io_service> io_service;
   shared_ptr<tcp::resolver> resolver;
 
-  PeerMap peers;
+  PeerMap peers; // all members except local_peer
   shared_ptr<Peer> local_peer;
 
-  map<string, shared_ptr<Group> > groups;
+  map<string, shared_ptr<Group> > groups; // all groups, sorted by ID, including local
   shared_ptr<Group> local_group;
 
-  JoinMap new_peers;
-  bool join_token;
+  JoinMap new_peers; // map storing information about pending Join Requests
+  bool join_token; // false when a JOIN procedure is ongoing
   
   map<string, PeerMap> predecessors;
   map<string, PeerMap> successors;
   // maps group ID with channel predecessors/successors
-  // map[ local_group_id ] = group pred/succ
-  // PeerMap predecessors;
-  // PeerMap successors;
+  // the preds/succs for the local group rings are stored at index local_group->id
 
   History logs; // sorted with Message.stamp
-  LogIndexHash& h_logs;
-  LogIndexTime& t_logs;
+  LogIndexHash& h_logs; // associative access (retrieve message by stamp)
+  LogIndexTime& t_logs; // sequential access (list messages in order of reception)
 
   map<string, shared_ptr<asio::deadline_timer> > ready_timers;
+  // associates a peer (ID) with a timer before sending a READY message
   map<string, shared_ptr<asio::deadline_timer> > join_timers;
+  // associates a peer (ID) with a timer before using the peer as relay  
 
-  // Ring rings[RINGS_NB];
-  
 };
 
 

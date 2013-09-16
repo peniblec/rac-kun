@@ -12,8 +12,8 @@
 
 Network::Network(shared_ptr<asio::io_service> _ios,
                  shared_ptr<tcp::resolver> _resolver,
-                 shared_ptr<Peer> p)
-  : io_service(_ios), resolver(_resolver), local_peer(p), join_token(true),
+                 shared_ptr<Peer> _local_peer)
+  : io_service(_ios), resolver(_resolver), local_peer(_local_peer), join_token(true),
     h_logs( logs.get<LOG_INDEX_HASH>() ), t_logs( logs.get<LOG_INDEX_TIME>() )
 {
 }
@@ -410,12 +410,14 @@ void Network::acknowledge_join(shared_ptr<Peer> peer, shared_ptr<Group> group)
   PeerMap& preds = predecessors[ group->get_id() ];
   PeerMap& succs = successors[ group->get_id() ];  
   group->update_neighbours(preds, succs, local_peer);
+  // TODO: if group == local_group, figure out what to do with channels
+
 
   // - send join ack
   // - if direct pred/succ, wait for READY before setting state to CONNECTED
   // - else, wait for 2T before setting to CONNECTED
 
-  Message* ack = new JoinAckMessage( group->get_id(),
+  Message* ack = new JoinAckMessage( local_group->get_id(),
                                      local_peer->get_id(), local_peer->get_key() );
   send(ack, peer);
   delete ack;

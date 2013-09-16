@@ -21,6 +21,7 @@ void Group::remove_peer(shared_ptr<Peer> peer)
 {
   for (int i=0; i<RINGS_NB; i++)
     rings[i].remove_peer(peer);
+  // TODO: remove peer from peers
 }
 
 void Group::update_neighbours(PeerMap& predecessors, PeerMap& successors,
