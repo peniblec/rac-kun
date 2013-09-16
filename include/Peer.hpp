@@ -38,7 +38,6 @@ public:
   }
 
   const unsigned short get_port() {
-    // TODO: return local port
     return (local ? settings.LISTEN_PORT : socket->remote_endpoint().port()); 
   }
 
