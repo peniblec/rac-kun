@@ -70,7 +70,7 @@ void Network::broadcast(shared_ptr<Group> group, Message* message, bool add_stam
     message->make_stamp( local_peer->get_id() );
   string msg(message->serialize());
   
-  PeerMap succs = successors[group->get_id()];
+  PeerMap succs = group->get_successors();
   PeerMap::iterator it;
   for (it=succs.begin(); it!=succs.end(); it++) {
     it->second->send(msg);
@@ -181,9 +181,7 @@ void Network::handle_disconnect(shared_ptr<Peer> p)
         GroupMap::iterator it;
         for (it = groups.begin(); it!=groups.end(); it++) {
           it->second->remove_peer(p);
-          it->second->update_neighbours( predecessors[ it->first ],
-                                         successors[ it->first ],
-                                         local_peer );
+          it->second->update_neighbours(local_peer);
         }
       }
       else {
@@ -194,9 +192,7 @@ void Network::handle_disconnect(shared_ptr<Peer> p)
         while (!found && it!=groups.end()) {
 
           if ( it->second->remove_peer(p) ) {
-            it->second->update_neighbours(predecessors[ it->first ],
-                                          successors[ it->first ],
-                                          local_peer);
+            it->second->update_neighbours(local_peer);
             found = true;
           }
         }
@@ -348,9 +344,7 @@ void Network::handle_incoming_message(const system::error_code& error,
         // we can compute our position on the rings
 
         local_group->add_peer(local_peer);
-        local_group->update_neighbours( predecessors[local_group->get_id()],
-                                        successors[local_group->get_id()],
-                                        local_peer );
+        local_group->update_neighbours(local_peer);
 
 
         local_peer->set_state(PEER_STATE_CONNECTED);
@@ -360,8 +354,8 @@ void Network::handle_incoming_message(const system::error_code& error,
         notif->make_stamp(local_peer->get_id());
         string notif_msg = notif->serialize();
 
-        PeerMap preds = predecessors[local_group->get_id()];
-        PeerMap succs = successors[local_group->get_id()];
+        PeerMap preds = local_group->get_predecessors();
+        PeerMap succs = local_group->get_successors();
 
         PeerMap directs(preds);
         directs.insert( succs.begin(), succs.end() );
@@ -416,9 +410,6 @@ void Network::acknowledge_join(shared_ptr<Peer> peer, shared_ptr<Group> group)
 {
   peers[ peer->get_id() ] = peer;
 
-  PeerMap& preds = predecessors[ group->get_id() ];
-  PeerMap& succs = successors[ group->get_id() ];  
-
   if (group->get_id() == local_group->get_id()) {
 
     for (GroupMap::iterator it = groups.begin(); it!=groups.end(); it++) {
@@ -428,16 +419,13 @@ void Network::acknowledge_join(shared_ptr<Peer> peer, shared_ptr<Group> group)
       else
         it->second->add_to_rings(peer);
 
-      PeerMap& preds_it = predecessors[ it->second->get_id() ];
-      PeerMap& succs_it = successors[ it->second->get_id() ];  
-      it->second->update_neighbours(preds_it, succs_it, local_peer);
-
+      it->second->update_neighbours(local_peer);
     }
   }
   else {
 
     group->add_peer(peer);
-    group->update_neighbours(preds, succs, local_peer);
+    group->update_neighbours(local_peer);
   }
 
   // - send join ack
@@ -448,6 +436,9 @@ void Network::acknowledge_join(shared_ptr<Peer> peer, shared_ptr<Group> group)
                                      local_peer->get_id(), local_peer->get_key() );
   send(ack, peer);
   delete ack;
+
+  PeerMap preds = group->get_predecessors();
+  PeerMap succs = group->get_successors();
 
   if ( preds.find(peer->get_id()) == preds.end()
        && succs.find(peer->get_id()) == succs.end() ) {
@@ -471,8 +462,8 @@ void Network::print_rings()
     cout << " :" << endl;
     g_it->second->display_rings();
 
-    PeerMap preds = predecessors[ g_it->first ];
-    PeerMap succs = successors[ g_it->first ];
+    PeerMap preds = g_it->second->get_predecessors();
+    PeerMap succs = g_it->second->get_successors();
 
     cout << "My predecessors are:" << endl;
     for (PeerMap::iterator it=preds.begin(); it!=preds.end(); it++) {
@@ -515,7 +506,9 @@ void Network::log_message(Message* message, shared_ptr<Peer> emitter)
     // make a list of peers we expect to receive this message from
 
     if (message->is_broadcast()) {
-      PeerMap preds = predecessors[ local_group->get_id() ];
+      PeerMap preds = local_group->get_predecessors();
+      // TODO: change this according to which channel we're bcasting in
+      
       for (PeerMap::iterator p=preds.begin(); p!=preds.end(); p++)
         ml.control[ p->second->get_id() ] = 0;
     }

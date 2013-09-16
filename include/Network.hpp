@@ -278,14 +278,6 @@ private:
 
   JoinMap new_peers; // map storing information about pending Join Requests
   bool join_token; // false when a JOIN procedure is ongoing
-  
-  map<string, PeerMap> predecessors;
-  map<string, PeerMap> successors;
-  // maps group ID with channel predecessors/successors
-  // the preds/succs for the local group rings are stored at index local_group->id
-
-  // TODO: choose between this or leaving preds/succs inside Groups, which would
-  // allow automatic neighbour updating when adding/removing
 
   History logs; // sorted with Message.stamp
   LogIndexHash& h_logs; // associative access (retrieve message by stamp)

@@ -22,8 +22,15 @@ public:
 
   bool remove_peer(shared_ptr<Peer> peer);
 
-  void update_neighbours(PeerMap& predecessors, PeerMap& successors,
-                         shared_ptr<Peer> local_peer);
+  void update_neighbours(shared_ptr<Peer> local_peer);
+
+  const PeerMap get_predecessors() {
+    return predecessors;
+  }
+
+  const PeerMap get_successors() {
+    return successors;
+  }
 
   void display_rings();
 
@@ -35,6 +42,9 @@ private:
 
   PeerMap peers;
   string id;
+
+  PeerMap predecessors;
+  PeerMap successors;
 
   // if group is local, those are group rings
   // otherwise, those are channel rings

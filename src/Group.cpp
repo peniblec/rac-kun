@@ -29,8 +29,7 @@ bool Group::remove_peer(shared_ptr<Peer> peer)
   return ( peers.erase( peer->get_id() ) > 0 );
 }
 
-void Group::update_neighbours(PeerMap& predecessors, PeerMap& successors,
-                              shared_ptr<Peer> local_peer)
+void Group::update_neighbours(shared_ptr<Peer> local_peer)
 {
   PeerMap preds, succs;
   shared_ptr<Peer> p;
