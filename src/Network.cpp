@@ -176,24 +176,31 @@ void Network::handle_disconnect(shared_ptr<Peer> p)
    DEBUG("Peer @" << p->get_address() << " disconnected.");
     if ( peers.erase( p->get_id() ) ) {
 
-      bool found(false);
-      map<string, shared_ptr<Group> >::iterator it = groups.begin();
-
-      while (!found && it!=groups.end()) {
-
-        try {
+      if (local_group->remove_peer(p)) {
+        // peer must be removed from all channels
+        map<string, shared_ptr<Group> >::iterator it;
+        for (it = groups.begin(); it!=groups.end(); it++) {
           it->second->remove_peer(p);
-          found = true;
-        }
-        catch (PeerNotFoundException& e) {
-          it++;
+          it->second->update_neighbours( predecessors[ it->first ],
+                                         successors[ it->first ],
+                                         local_peer );
         }
       }
+      else {
 
-      if (found)
-        it->second->update_neighbours(predecessors[ it->first ],
-                                      successors[ it->first ],
-                                      local_peer);
+        bool found(false);
+        map<string, shared_ptr<Group> >::iterator it = groups.begin();
+
+        while (!found && it!=groups.end()) {
+
+          if ( it->second->remove_peer(p) ) {
+            it->second->update_neighbours(predecessors[ it->first ],
+                                          successors[ it->first ],
+                                          local_peer);
+            found = true;
+          }
+        }
+      }
     }
     else {
       new_peers.erase( p->get_address() );
@@ -448,7 +455,6 @@ void Network::print_rings()
     PeerMap succs = successors[ g_it->first ];
 
     cout << "My predecessors are:" << endl;
-
     for (PeerMap::iterator it=preds.begin(); it!=preds.end(); it++) {
       cout << "- " << it->second->get_id() << endl;
     }

@@ -10,22 +10,27 @@ Group::Group(string _id)
 void Group::add_peer(shared_ptr<Peer> peer)
 {
   peers.insert(pair<string, shared_ptr<Peer> >(peer->get_id(), peer));
+  add_to_rings(peer);
+}
 
+void Group::add_to_rings(shared_ptr<Peer> peer)
+{
   for (int i=0; i<RINGS_NB; i++) {
 
     rings[i].add_peer(peer);
   }
 }
 
-void Group::remove_peer(shared_ptr<Peer> peer)
+bool Group::remove_peer(shared_ptr<Peer> peer)
 {
   for (int i=0; i<RINGS_NB; i++)
     rings[i].remove_peer(peer);
-  // TODO: remove peer from peers
+
+  return ( peers.erase( peer->get_id() ) > 0 );
 }
 
 void Group::update_neighbours(PeerMap& predecessors, PeerMap& successors,
-                       shared_ptr<Peer> local_peer)
+                              shared_ptr<Peer> local_peer)
 {
   PeerMap preds, succs;
   shared_ptr<Peer> p;
@@ -50,6 +55,11 @@ void Group::update_neighbours(PeerMap& predecessors, PeerMap& successors,
 
 void Group::display_rings()
 {
+  cout << "Peers: ";
+  for (PeerMap::iterator it = peers.begin(); it!=peers.end(); it++)
+    cout << it->first << " ; ";
+  cout << endl;
+  
   for (int i=0; i<RINGS_NB; i++) {
     
     rings[i].display();

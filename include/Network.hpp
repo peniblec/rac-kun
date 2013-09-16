@@ -283,6 +283,9 @@ private:
   // maps group ID with channel predecessors/successors
   // the preds/succs for the local group rings are stored at index local_group->id
 
+  // TODO: choose between this or leaving preds/succs inside Groups, which would
+  // allow automatic neighbour updating when adding/removing
+
   History logs; // sorted with Message.stamp
   LogIndexHash& h_logs; // associative access (retrieve message by stamp)
   LogIndexTime& t_logs; // sequential access (list messages in order of reception)

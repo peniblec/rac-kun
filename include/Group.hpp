@@ -18,7 +18,9 @@ public:
 
   void add_peer(shared_ptr<Peer> peer);
 
-  void remove_peer(shared_ptr<Peer> peer);
+  void add_to_rings(shared_ptr<Peer> peer);
+
+  bool remove_peer(shared_ptr<Peer> peer);
 
   void update_neighbours(PeerMap& predecessors, PeerMap& successors,
                          shared_ptr<Peer> local_peer);

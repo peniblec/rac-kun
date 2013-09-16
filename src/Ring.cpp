@@ -28,8 +28,9 @@ void Ring::remove_peer(shared_ptr<Peer> p)
 
   if ( it!=ring.end() )
     ring.erase(it);
-  else
-    throw PeerNotFoundException();
+  // else
+  //   throw PeerNotFoundException();
+  
 }
 
 shared_ptr<Peer> Ring::get_successor(shared_ptr<Peer> p)
