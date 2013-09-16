@@ -178,7 +178,7 @@ void Network::handle_disconnect(shared_ptr<Peer> p)
 
       if (local_group->remove_peer(p)) {
         // peer must be removed from all channels
-        map<string, shared_ptr<Group> >::iterator it;
+        GroupMap::iterator it;
         for (it = groups.begin(); it!=groups.end(); it++) {
           it->second->remove_peer(p);
           it->second->update_neighbours( predecessors[ it->first ],
@@ -189,7 +189,7 @@ void Network::handle_disconnect(shared_ptr<Peer> p)
       else {
 
         bool found(false);
-        map<string, shared_ptr<Group> >::iterator it = groups.begin();
+        GroupMap::iterator it = groups.begin();
 
         while (!found && it!=groups.end()) {
 
@@ -288,22 +288,26 @@ void Network::handle_incoming_message(const system::error_code& error,
         // - add it to correct position in rings
 
         JoinNotifMessage* msg = dynamic_cast<JoinNotifMessage*>(message);
-        // TODO: check that ID belongs to this group
-        join_token = false;
-        shared_ptr<Peer> new_peer = connect_peer( msg->ip,
-                                                  itos(msg->port) );
 
-        new_peer->init( msg->peer_id, msg->pub_k );
-        new_peer->set_state(PEER_STATE_JOINING);
+        GroupMap::iterator it = groups.find( msg->group_id );
 
-        acknowledge_join(new_peer, local_group);
+        if ( it!=groups.end() ) { // TODO: end new peer ID belongs in this group
 
-        Peer::Handler listen_handler = bind(&Network::handle_incoming_message, this,
-                                            asio::placeholders::error,
-                                            asio::placeholders::bytes_transferred,
-                                            new_peer);
-        new_peer->start_listening(listen_handler);
+          join_token = false;
+          shared_ptr<Peer> new_peer = connect_peer( msg->ip,
+                                                    itos(msg->port) );
 
+          new_peer->init( msg->peer_id, msg->pub_k );
+          new_peer->set_state(PEER_STATE_JOINING);
+
+          acknowledge_join(new_peer, it->second);
+
+          Peer::Handler listen_handler = bind(&Network::handle_incoming_message, this,
+                                              asio::placeholders::error,
+                                              asio::placeholders::bytes_transferred,
+                                              new_peer);
+          new_peer->start_listening(listen_handler);
+        }
       }
         break;
 
@@ -412,13 +416,29 @@ void Network::acknowledge_join(shared_ptr<Peer> peer, shared_ptr<Group> group)
 {
   peers[ peer->get_id() ] = peer;
 
-  group->add_peer(peer); 
-
   PeerMap& preds = predecessors[ group->get_id() ];
   PeerMap& succs = successors[ group->get_id() ];  
-  group->update_neighbours(preds, succs, local_peer);
-  // TODO: if group == local_group, figure out what to do with channels
 
+  if (group->get_id() == local_group->get_id()) {
+
+    for (GroupMap::iterator it = groups.begin(); it!=groups.end(); it++) {
+
+      if (it->second->get_id() == local_group->get_id())
+        it->second->add_peer(peer);
+      else
+        it->second->add_to_rings(peer);
+
+      PeerMap& preds_it = predecessors[ it->second->get_id() ];
+      PeerMap& succs_it = successors[ it->second->get_id() ];  
+      it->second->update_neighbours(preds_it, succs_it, local_peer);
+
+    }
+  }
+  else {
+
+    group->add_peer(peer);
+    group->update_neighbours(preds, succs, local_peer);
+  }
 
   // - send join ack
   // - if direct pred/succ, wait for READY before setting state to CONNECTED
@@ -443,7 +463,7 @@ void Network::acknowledge_join(shared_ptr<Peer> peer, shared_ptr<Group> group)
 
 void Network::print_rings()
 {
-  map<string, shared_ptr<Group> >::iterator g_it;
+  GroupMap::iterator g_it;
   for (g_it = groups.begin(); g_it != groups.end(); g_it++) {
 
     cout << "\tIn group ";

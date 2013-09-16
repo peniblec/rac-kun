@@ -28,6 +28,7 @@ class Network
 private:
   typedef map<string, pair<shared_ptr<Peer>, unsigned short> > JoinMap;
   // associates IP with peer/listening port
+  typedef map<string, shared_ptr<Group> > GroupMap;
 
   struct MessageLog {
     string message;
