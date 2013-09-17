@@ -256,8 +256,7 @@ void Network::handle_incoming_message(const system::error_code& error,
           channel_markers.insert(pair<string, string>
                                  (make_channel_marker(local_group, local_group), id));
 
-          local_group->add_peer(local_peer);
-          
+          local_group->add_to_rings(local_peer);
         }
 
         // As the entry point for the emitter, we will
@@ -291,8 +290,8 @@ void Network::handle_incoming_message(const system::error_code& error,
 
         GroupMap::iterator it = groups.find( msg->group_id );
 
-        if ( it!=groups.end() && (msg->group_id==local_group->get_id()
-                                  || msg->CHANNEL) ) {
+        if ( it!=groups.end() && ( (msg->group_id==local_group->get_id())
+                                   ^ msg->CHANNEL ) ) { 
           // TODO: and if new peer ID belongs in this group
 
           join_token = false;
@@ -328,7 +327,9 @@ void Network::handle_incoming_message(const system::error_code& error,
 
           if (!local_group)
             local_group = his_group;
-          
+          else
+            his_group->add_to_rings(local_group);
+
           channel_markers.insert(pair<string, string>
                                  ( make_channel_marker(local_group, his_group),
                                    msg->group_id ));
@@ -358,28 +359,39 @@ void Network::handle_incoming_message(const system::error_code& error,
         // TODO: according to whether we're JOINING or CONNECTED,
         // add ourselves to local_group or all channels respectively
 
-        local_group->add_peer(local_peer);
-        local_group->update_neighbours(local_peer);
+        for (GroupMap::iterator it = groups.begin(); it!=groups.end(); it++) {
 
-        local_peer->set_state(PEER_STATE_CONNECTED);
+          shared_ptr<Group> group = it->second;
 
-        Message* notif = new ReadyNotifMessage();
+          if (group->get_id() != local_group->get_id()) {
+            group->add_to_rings(local_peer);
+            group->update_neighbours(local_peer);
+          }
+          else if (local_peer->get_state() != PEER_STATE_CONNECTED) {
+            local_peer->set_state(PEER_STATE_CONNECTED);
+            local_group->add_to_rings(local_peer);
+            local_group->update_neighbours(local_peer);
+          }
+          Message* notif = new ReadyNotifMessage();
 
-        notif->make_stamp(local_peer->get_id());
-        string notif_msg = notif->serialize();
+          notif->make_stamp(local_peer->get_id());
+          string notif_msg = notif->serialize();
 
-        PeerMap preds = local_group->get_predecessors();
-        PeerMap succs = local_group->get_successors();
+          PeerMap preds = group->get_predecessors();
+          PeerMap succs = group->get_successors();
 
-        PeerMap directs(preds);
-        directs.insert( succs.begin(), succs.end() );
+          PeerMap directs(preds);
+          directs.insert( succs.begin(), succs.end() );
 
-        for (PeerMap::iterator it=directs.begin(); it!=directs.end(); it++)
-          it->second->send(notif_msg);
+          for (PeerMap::iterator it=directs.begin(); it!=directs.end(); it++)
+            it->second->send(notif_msg);
 
-        log_message( notif, local_peer );
+          log_message( notif, local_peer );
         
-        delete notif;
+          delete notif;
+
+
+        }
       }
         break;
 

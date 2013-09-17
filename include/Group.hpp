@@ -20,6 +20,8 @@ public:
 
   void add_to_rings(shared_ptr<Peer> peer);
 
+  void add_to_rings(shared_ptr<Group> other_group);
+
   bool remove_peer(shared_ptr<Peer> peer);
 
   void update_neighbours(shared_ptr<Peer> local_peer);

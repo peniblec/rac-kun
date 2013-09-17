@@ -21,6 +21,20 @@ void Group::add_to_rings(shared_ptr<Peer> peer)
   }
 }
 
+void Group::add_to_rings(shared_ptr<Group> other_group)
+{
+  PeerMap other_peers = other_group->peers;
+
+  for (int i=0; i<RINGS_NB; i++) {
+
+    for (PeerMap::iterator it=other_peers.begin();
+         it!=other_peers.end(); it++) {
+
+      rings[i].add_peer(it->second);
+    }
+  }
+}
+
 bool Group::remove_peer(shared_ptr<Peer> peer)
 {
   for (int i=0; i<RINGS_NB; i++)
