@@ -20,12 +20,21 @@ shared_ptr<Peer> create_local_peer()
   shared_ptr<tcp::socket> null_ptr;
   shared_ptr<Peer> local_peer(new Peer(null_ptr, true));
 
+  // DUMMY ID GENERATION
+
+  int non_random = 13;
   char name[ID_LENGTH + 1];
   name[ID_LENGTH] = '\0';
-  // gethostname is not guaranteed to add \0 if it needs to truncate host name
-  gethostname(name, sizeof(name) -1);
 
+  gethostname(name, non_random);
+
+  srand(time(NULL));
+  for (uint i=non_random; i<ID_LENGTH; i++) {
+    name[i] = (char)('0'+(rand() % 10));
+  }
   string id(name);
+
+  // /END DUMMY ID GENERATION
 
   local_peer->init( id, "AAAAA" );
 

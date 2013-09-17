@@ -26,7 +26,7 @@ const char* MessageTypeNames[MESSAGE_TYPE_END] =
 const unsigned int MSG_STAMP_LENGTH = CryptoPP::SHA1::DIGESTSIZE;
 const unsigned int BCAST_MARKER_LENGTH = CryptoPP::SHA1::DIGESTSIZE;
 
-const unsigned int ID_LENGTH = 13;
+const unsigned int ID_LENGTH = 20;
 const unsigned int GROUP_ID_LENGTH = CryptoPP::SHA1::DIGESTSIZE;
 
 const unsigned int KEY_LENGTH = 5;
