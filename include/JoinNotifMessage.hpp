@@ -3,23 +3,24 @@
 
 #include "Config.hpp"
 
-#include "Message.hpp"
+#include "BCastMessage.hpp"
 
-struct JoinNotifMessage : Message
+struct JoinNotifMessage : BCastMessage
 {
-  JoinNotifMessage(string _group_id, string _peer_id, string _pub_k,
+  JoinNotifMessage(bool _CHANNEL,
+                   string _group_id, string _peer_id, string _pub_k,
                    string _ip, unsigned short _port);
   
   string serialize();
   void display();
 
+  const bool CHANNEL;
   const string group_id;
   const string peer_id;
   const string pub_k;
   const string ip;
   const unsigned short port;
 
-private:
 };
 
 

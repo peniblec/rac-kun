@@ -22,7 +22,7 @@ struct Message
   void make_stamp(string peer_id);
   void set_stamp(string _stamp);
 
-  bool is_broadcast();
+  virtual bool is_broadcast();
 
 
   const Type type;

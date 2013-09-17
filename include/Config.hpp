@@ -5,8 +5,9 @@
 
 using namespace std;
 
-#define MESSAGE_SIZE 128
+#define MESSAGE_SIZE 1024
 #define RINGS_NB 3
+#define GROUP_MAX_SIZE 5
 
 const string COMMAND_SEND = "send";
 const string COMMAND_JOIN = "join";
@@ -38,24 +39,13 @@ enum MessageType {
 extern const char* MessageTypeNames[MESSAGE_TYPE_END];
 
 extern const unsigned int MSG_STAMP_LENGTH;
-extern const unsigned int MSG_STAMP_OFFSET;
-
-extern const unsigned int DATA_MESSAGE_OFFSET;
+extern const unsigned int BCAST_MARKER_LENGTH;
 
 extern const unsigned int ID_LENGTH;
 extern const unsigned int GROUP_ID_LENGTH;
 
-extern const unsigned int JOIN_MSG_ID_OFFSET;
-extern const unsigned int JOIN_MSG_ID_LENGTH;
+extern const unsigned int KEY_LENGTH;
 
-extern const unsigned int JOIN_MSG_KEY_OFFSET;
-extern const unsigned int JOIN_MSG_KEY_LENGTH;
-
-extern const unsigned int JOIN_REQUEST_PORT_OFFSET;
-
-extern const unsigned int JOIN_NOTIF_GROUP_ID_OFFSET;
-
-extern const unsigned int JOIN_NOTIF_ENDPOINT_OFFSET;
 
 extern const unsigned int READY_TIME;
 extern const unsigned int JOIN_COMPLETE_TIME;

@@ -12,6 +12,7 @@
 #include "Config.hpp"
 #include "Group.hpp"
 #include "Message.hpp"
+#include "BCastMessage.hpp"
 #include "Peer.hpp"
 #include "Ring.hpp"
 #include "Utils.hpp"
@@ -37,12 +38,12 @@ private:
     // we received this message from this peer
 
     bool operator<(const MessageLog ml)const {
-      string my_stamp(message, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
-      string its_stamp(ml.message, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
+      string my_stamp(message, 1, MSG_STAMP_LENGTH);
+      string its_stamp(ml.message, 1, MSG_STAMP_LENGTH);
 
       return my_stamp<its_stamp;
-      // return ( memcmp( (message.c_str())[MSG_STAMP_OFFSET],
-      //                  (ml.message.c_str())[MSG_STAMP_OFFSET],
+      // return ( memcmp( (message.c_str())[1],
+      //                  (ml.message.c_str())[1],
       //                  MSG_STAMP_LENGTH ) < 0 );
       
     }
@@ -174,7 +175,7 @@ public:
          default is false, since when simply passing a message down the rings,
          the ID should not be tampered with
    */
-  void broadcast(shared_ptr<Group> group, Message* message, bool add_stamp=false);
+  void broadcast(shared_ptr<Group> group, BCastMessage* message, bool add_stamp=false);
 
   /* broadcast_data:
      - called by UI
@@ -273,8 +274,11 @@ private:
   PeerMap peers; // all members except local_peer
   shared_ptr<Peer> local_peer;
 
-  map<string, shared_ptr<Group> > groups; // all groups, sorted by ID, including local
+  GroupMap groups; // all groups, sorted by ID, including local
   shared_ptr<Group> local_group;
+
+  map<string, string> channel_markers; // associates a channel ID to a group
+  // maps local_group id to local_group id
 
   JoinMap new_peers; // map storing information about pending Join Requests
   bool join_token; // false when a JOIN procedure is ongoing

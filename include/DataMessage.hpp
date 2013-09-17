@@ -3,9 +3,9 @@
 
 #include "Config.hpp"
 
-#include "Message.hpp"
+#include "BCastMessage.hpp"
 
-struct DataMessage : Message
+struct DataMessage : BCastMessage
 {
   DataMessage(string _data);
   

@@ -24,25 +24,12 @@ const char* MessageTypeNames[MESSAGE_TYPE_END] =
   };
 
 const unsigned int MSG_STAMP_LENGTH = CryptoPP::SHA1::DIGESTSIZE;
-const unsigned int MSG_STAMP_OFFSET = 1;
-
-const unsigned int DATA_MESSAGE_OFFSET = MSG_STAMP_OFFSET + MSG_STAMP_LENGTH;
+const unsigned int BCAST_MARKER_LENGTH = CryptoPP::SHA1::DIGESTSIZE;
 
 const unsigned int ID_LENGTH = 13;
 const unsigned int GROUP_ID_LENGTH = CryptoPP::SHA1::DIGESTSIZE;
 
-const unsigned int JOIN_MSG_ID_OFFSET = MSG_STAMP_OFFSET + MSG_STAMP_LENGTH;
-const unsigned int JOIN_MSG_ID_LENGTH = ID_LENGTH;
-
-const unsigned int JOIN_MSG_KEY_OFFSET = JOIN_MSG_ID_OFFSET + JOIN_MSG_ID_LENGTH;
-const unsigned int JOIN_MSG_KEY_LENGTH = 5;
-
-const unsigned int JOIN_REQUEST_PORT_OFFSET = JOIN_MSG_KEY_OFFSET + JOIN_MSG_KEY_LENGTH;
-
-const unsigned int JOIN_NOTIF_GROUP_ID_OFFSET = JOIN_MSG_KEY_OFFSET + JOIN_MSG_KEY_LENGTH;
-
-const unsigned int JOIN_NOTIF_ENDPOINT_OFFSET =
-  JOIN_NOTIF_GROUP_ID_OFFSET + GROUP_ID_LENGTH;
+const unsigned int KEY_LENGTH = 5;
 
 
 const unsigned int READY_TIME = 3; // seconds

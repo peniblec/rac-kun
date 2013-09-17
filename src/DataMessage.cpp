@@ -3,13 +3,14 @@
 #include "DataMessage.hpp"
 
 DataMessage::DataMessage(string _data)
-  : Message(MESSAGE_TYPE_DATA), data(_data)
+  : BCastMessage(MESSAGE_TYPE_DATA), data(_data)
 {
 }
 
 string DataMessage::serialize()
 {
   string s = Message::serialize();
+  s.append(BCAST_MARKER);
   s.append(data);
   return s;
 }

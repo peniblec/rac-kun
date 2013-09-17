@@ -24,8 +24,7 @@ void Message::make_stamp(string peer_id)
 
 bool Message::is_broadcast()
 {
-  return ( type == MESSAGE_TYPE_JOIN_NOTIF
-           || type == MESSAGE_TYPE_DATA );
+  return false;
 }
 
 void Message::display()

@@ -72,13 +72,16 @@ Message* parse_message(string msg)
 
   // try{
   
+  unsigned int offset = 1 + MSG_STAMP_LENGTH;
+
   switch (msg_type) {
   case MESSAGE_TYPE_JOIN:
     {
-      string id(msg, JOIN_MSG_ID_OFFSET, JOIN_MSG_ID_LENGTH);
-      string pub_k(msg, JOIN_MSG_KEY_OFFSET, JOIN_MSG_KEY_LENGTH);
-
-      string endpoint(msg, JOIN_REQUEST_PORT_OFFSET);
+      string id(msg, offset, ID_LENGTH);
+      offset+=ID_LENGTH;
+      string pub_k(msg, offset, KEY_LENGTH);
+      offset+=KEY_LENGTH;
+      string endpoint(msg, offset);
 
       unsigned short port;
       istringstream(endpoint) >> port;
@@ -88,25 +91,38 @@ Message* parse_message(string msg)
     break;
   case MESSAGE_TYPE_JOIN_NOTIF:
     {
-      string peer_id(msg, JOIN_MSG_ID_OFFSET, JOIN_MSG_ID_LENGTH);
-      string pub_k(msg, JOIN_MSG_KEY_OFFSET, JOIN_MSG_KEY_LENGTH);
-      string group_id(msg, JOIN_NOTIF_GROUP_ID_OFFSET, GROUP_ID_LENGTH);
+      string bcast_marker(msg, offset, BCAST_MARKER_LENGTH);
+      offset+=BCAST_MARKER_LENGTH;
 
-      string endpoint(msg, JOIN_NOTIF_ENDPOINT_OFFSET);
+      bool channel_flag( msg[offset] );
+      offset+=1;
+
+      string peer_id(msg, offset, ID_LENGTH);
+      offset+=ID_LENGTH;
+      
+      string pub_k(msg, offset, KEY_LENGTH);
+      offset+=KEY_LENGTH;
+
+      string group_id(msg, offset, GROUP_ID_LENGTH);
+      offset+=GROUP_ID_LENGTH;
+
+      string endpoint(msg, offset);
       int colon = endpoint.find(':');
-
       string ip( endpoint.substr(0, colon) );
       unsigned short port;
       istringstream ( endpoint.substr( colon+1, endpoint.size() ) ) >> port;
  
-      m = new JoinNotifMessage(group_id, peer_id, pub_k, ip, port);
+      m = new JoinNotifMessage(channel_flag, group_id, peer_id, pub_k, ip, port);
+      ((JoinNotifMessage*)m)->BCAST_MARKER = bcast_marker;
     }
     break;
   case MESSAGE_TYPE_JOIN_ACK:
     {
-      string peer_id(msg, JOIN_MSG_ID_OFFSET, JOIN_MSG_ID_LENGTH);
-      string pub_k(msg, JOIN_MSG_KEY_OFFSET, JOIN_MSG_KEY_LENGTH);
-      string group_id(msg, JOIN_NOTIF_GROUP_ID_OFFSET, GROUP_ID_LENGTH);
+      string peer_id(msg, offset, ID_LENGTH);
+      offset+=ID_LENGTH;
+      string pub_k(msg, offset, KEY_LENGTH);
+      offset+=KEY_LENGTH;
+      string group_id(msg, offset, GROUP_ID_LENGTH);
 
       m = new JoinAckMessage(group_id, peer_id, pub_k);
     }
@@ -123,15 +139,18 @@ Message* parse_message(string msg)
     break;
   case MESSAGE_TYPE_DATA:
     {
-      string data(msg, DATA_MESSAGE_OFFSET);
+      string bcast_marker(msg, offset, BCAST_MARKER_LENGTH);
+      offset+=BCAST_MARKER_LENGTH;
+      string data(msg, offset);
 
       m = new DataMessage(data);
+      ((DataMessage*)m)->BCAST_MARKER = bcast_marker;
     }
     break;
   default:
     throw MessageParseException();
   }
-  string stamp(msg, MSG_STAMP_OFFSET, MSG_STAMP_LENGTH);
+  string stamp(msg, 1, MSG_STAMP_LENGTH);
   m->stamp = stamp;
 
   return m;

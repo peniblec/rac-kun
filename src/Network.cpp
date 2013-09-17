@@ -64,13 +64,19 @@ shared_ptr<Peer> Network::connect_peer(string ip, string port)
   return new_peer;
 }
 
-void Network::broadcast(shared_ptr<Group> group, Message* message, bool add_stamp)
+void Network::broadcast(shared_ptr<Group> group, BCastMessage* message, bool add_stamp)
 {
+  if (local_group->get_id() < group->get_id())
+    message->BCAST_MARKER = make_hash(local_group->get_id() + group->get_id());
+  else
+    message->BCAST_MARKER = make_hash(group->get_id() + local_group->get_id());
+
   if (add_stamp)
     message->make_stamp( local_peer->get_id() );
   string msg(message->serialize());
-  
+
   PeerMap succs = group->get_successors();
+
   PeerMap::iterator it;
   for (it=succs.begin(); it!=succs.end(); it++) {
     it->second->send(msg);
@@ -121,16 +127,17 @@ void Network::send_ready(const system::error_code& error, shared_ptr<Peer> peer)
 void Network::answer_join_request(shared_ptr<Peer> peer, unsigned short port)
 {
   join_token = false;
-  Message* notif = new JoinNotifMessage( local_group->get_id(), peer->get_id(),
-                                         peer->get_key(), peer->get_address(), port );
-
   shared_ptr<Group> group = local_group;
   // TODO: replace with computation based on peer IDs - see RAC III.C.Joining
 
+  BCastMessage* notif = new JoinNotifMessage( false, group->get_id(),
+                                              peer->get_id(), peer->get_key(),
+                                              peer->get_address(), port );
   broadcast(group, notif, true);
   delete notif;
 
   new_peers.erase( peer->get_address() );
+
   if (group->get_id() == local_group->get_id())
     acknowledge_join(peer, group);
 
@@ -235,7 +242,7 @@ void Network::handle_incoming_message(const system::error_code& error,
           log_message(message, emitter);
 
         if (message->is_broadcast())
-          broadcast(local_group, message); // TODO: determine which channel to bcast in
+          broadcast(local_group, dynamic_cast<BCastMessage*>(message));
       }
 
 
@@ -247,9 +254,13 @@ void Network::handle_incoming_message(const system::error_code& error,
           local_peer->set_state(PEER_STATE_CONNECTED);
 
           string concat( local_peer->get_id() + itos(milliseconds_since_epoch()) ) ;
-          local_group = shared_ptr<Group>(new Group(make_hash(concat)));
-          groups.insert( pair<string, shared_ptr<Group> >( local_group->get_id(),
-                                                           local_group ) );
+          string id = make_hash(concat);
+
+          local_group = shared_ptr<Group>(new Group(id));
+          groups.insert( pair<string, shared_ptr<Group> >( id, local_group ) );
+
+          string bcast_marker = make_hash(id+id);
+          channel_markers.insert(pair<string, string>(bcast_marker, id));
           
           local_group->add_peer(local_peer);
           
@@ -265,14 +276,13 @@ void Network::handle_incoming_message(const system::error_code& error,
 
         emitter->init( msg->id, msg->pub_k );
         emitter->set_state( PEER_STATE_JOINING );
+
         log_message(message, emitter);
 
         if (join_token)
           answer_join_request(emitter, msg->port);
         else
           new_peers[ emitter->get_address() ].second = msg->port;
-
-        
       }
         break;
 
@@ -287,7 +297,9 @@ void Network::handle_incoming_message(const system::error_code& error,
 
         GroupMap::iterator it = groups.find( msg->group_id );
 
-        if ( it!=groups.end() ) { // TODO: end new peer ID belongs in this group
+        if ( it!=groups.end() && (msg->group_id==local_group->get_id()
+                                  || msg->CHANNEL) ) {
+          // TODO: and if new peer ID belongs in this group
 
           join_token = false;
           shared_ptr<Peer> new_peer = connect_peer( msg->ip,
@@ -321,6 +333,13 @@ void Network::handle_incoming_message(const system::error_code& error,
 
           if (!local_group)
             local_group = new_group;
+
+          string bcast_marker =
+            local_group->get_id() < new_group->get_id() ?
+            make_hash(local_group->get_id() + new_group->get_id())
+            : make_hash(new_group->get_id() + local_group->get_id());
+          channel_markers.insert(pair<string, string>
+                                 (bcast_marker, new_group->get_id()));
         }
           
 
@@ -345,7 +364,6 @@ void Network::handle_incoming_message(const system::error_code& error,
 
         local_group->add_peer(local_peer);
         local_group->update_neighbours(local_peer);
-
 
         local_peer->set_state(PEER_STATE_CONNECTED);
 
@@ -506,8 +524,10 @@ void Network::log_message(Message* message, shared_ptr<Peer> emitter)
     // make a list of peers we expect to receive this message from
 
     if (message->is_broadcast()) {
-      PeerMap preds = local_group->get_predecessors();
-      // TODO: change this according to which channel we're bcasting in
+      BCastMessage* bmsg = dynamic_cast<BCastMessage*>(message);
+      string bcast_marker = bmsg->BCAST_MARKER;
+
+      PeerMap preds = groups[ channel_markers[bcast_marker] ]->get_predecessors();
       
       for (PeerMap::iterator p=preds.begin(); p!=preds.end(); p++)
         ml.control[ p->second->get_id() ] = 0;
