@@ -292,7 +292,7 @@ void Network::handle_incoming_message(const system::error_code& error,
 
         if ( it!=groups.end() && ( (msg->group_id==local_group->get_id())
                                    ^ msg->CHANNEL ) ) { 
-          // TODO: and if new peer ID belongs in this group
+          // TODO: check that ID belongs to that group (cf RAC III.C.Joining)
 
           join_token = false;
           shared_ptr<Peer> new_peer = connect_peer( msg->ip,
@@ -309,6 +309,7 @@ void Network::handle_incoming_message(const system::error_code& error,
                                               new_peer);
           new_peer->start_listening(listen_handler);
         }
+        // TODO: handle case where (group_id == local_group) && (CHANNEL flag is on)
       }
         break;
 
