@@ -9,10 +9,24 @@ communication protocol conceived by researchers from CNRS and LIG.
 
 Implemented features:
 - Join procedure
-- Ring broadcast
+- Ring structure
 
-Next features to be implemented:
-- Automatic/better configuration
+Implementing:
+- Groups and channels
+
+Not implemented:
+- ID and pseudonym key pairs
+- Identifier computation
+- Onion routing
+- Checking for misbehaviour
+
+
+Requirements
+================================================================================
+
+Dependencies:
+- Boost 1.49
+- Crypto++ 5.6.1
 
 
 Credits
