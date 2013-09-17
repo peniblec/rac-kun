@@ -244,6 +244,10 @@ public:
 
   // Other methods
   
+  shared_ptr<Group> create_group(string id);
+  string make_channel_marker(shared_ptr<Group> group1,
+                             shared_ptr<Group> group2);
+
   /* print_rings:
      - called by UI
      - for each ring, display members sorted according to their position

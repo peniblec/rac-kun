@@ -66,10 +66,7 @@ shared_ptr<Peer> Network::connect_peer(string ip, string port)
 
 void Network::broadcast(shared_ptr<Group> group, BCastMessage* message, bool add_stamp)
 {
-  if (local_group->get_id() < group->get_id())
-    message->BCAST_MARKER = make_hash(local_group->get_id() + group->get_id());
-  else
-    message->BCAST_MARKER = make_hash(group->get_id() + local_group->get_id());
+  message->BCAST_MARKER = make_channel_marker( local_group, group );
 
   if (add_stamp)
     message->make_stamp( local_peer->get_id() );
@@ -255,13 +252,10 @@ void Network::handle_incoming_message(const system::error_code& error,
 
           string concat( local_peer->get_id() + itos(milliseconds_since_epoch()) ) ;
           string id = make_hash(concat);
+          local_group = create_group(id);
+          channel_markers.insert(pair<string, string>
+                                 (make_channel_marker(local_group, local_group), id));
 
-          local_group = shared_ptr<Group>(new Group(id));
-          groups.insert( pair<string, shared_ptr<Group> >( id, local_group ) );
-
-          string bcast_marker = make_hash(id+id);
-          channel_markers.insert(pair<string, string>(bcast_marker, id));
-          
           local_group->add_peer(local_peer);
           
         }
@@ -327,21 +321,20 @@ void Network::handle_incoming_message(const system::error_code& error,
         JoinAckMessage* msg = dynamic_cast<JoinAckMessage*>(message);
         // check whether we're joining/readying, maybe?
         
-        if (groups.find( msg->group_id ) == groups.end()) {
-          shared_ptr<Group> new_group = shared_ptr<Group>(new Group(msg->group_id));
-          groups.insert( pair<string, shared_ptr<Group> >(msg->group_id, new_group) );
+        shared_ptr<Group> his_group;
+        GroupMap::iterator it = groups.find( msg->group_id );
+        if (it == groups.end()) {
+          his_group = create_group( msg->group_id );
 
           if (!local_group)
-            local_group = new_group;
-
-          string bcast_marker =
-            local_group->get_id() < new_group->get_id() ?
-            make_hash(local_group->get_id() + new_group->get_id())
-            : make_hash(new_group->get_id() + local_group->get_id());
-          channel_markers.insert(pair<string, string>
-                                 (bcast_marker, new_group->get_id()));
-        }
+            local_group = his_group;
           
+          channel_markers.insert(pair<string, string>
+                                 ( make_channel_marker(local_group, his_group),
+                                   msg->group_id ));
+        }
+        else
+          his_group = it->second;
 
         emitter->init( msg->peer_id, msg->pub_k );
         emitter->set_state(PEER_STATE_CONNECTED);
@@ -349,7 +342,7 @@ void Network::handle_incoming_message(const system::error_code& error,
         new_peers.erase( emitter->get_address() );
         peers[ emitter->get_id() ] = emitter;
 
-        groups[msg->group_id]->add_peer(emitter);
+        his_group->add_peer(emitter);
 
         log_message( message, emitter );
         
@@ -361,6 +354,9 @@ void Network::handle_incoming_message(const system::error_code& error,
         // entry point has communicated our status to the group we belong to ;
         // they all have been sending us JOIN_ACK so that now,
         // we can compute our position on the rings
+
+        // TODO: according to whether we're JOINING or CONNECTED,
+        // add ourselves to local_group or all channels respectively
 
         local_group->add_peer(local_peer);
         local_group->update_neighbours(local_peer);
@@ -547,4 +543,22 @@ Network::LogIndexHash::iterator Network::find_log(Message* message) {
   ml.message = message->serialize();
 
   return h_logs.find(ml);
+}
+
+shared_ptr<Group> Network::create_group(string id)
+{
+  shared_ptr<Group> new_group
+    = shared_ptr<Group>(new Group(id));
+
+  groups.insert( pair<string, shared_ptr<Group> >(id, new_group) );
+
+  return new_group;
+}
+
+string Network::make_channel_marker(shared_ptr<Group> group1,
+                                    shared_ptr<Group> group2)
+{
+  return ( group1->get_id() < group2->get_id()
+           ? make_hash(group1->get_id() + group2->get_id())
+           : make_hash(group2->get_id() + group1->get_id()) );
 }
