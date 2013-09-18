@@ -434,6 +434,7 @@ void Network::handle_incoming_message(const system::error_code& error,
       cout << "Message bytes:" << endl;
 
       display_chars(received_message, received_message.size());
+      cout << endl;
     }
   }  
 }
