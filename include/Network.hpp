@@ -80,7 +80,7 @@ private:
 public:
   Network(shared_ptr<asio::io_service> _ios,
           shared_ptr<tcp::resolver> _resolver,
-	  shared_ptr<Peer> _local_peerp);
+	  shared_ptr<Peer> _local_peep);
   
   // Join-related methods
 

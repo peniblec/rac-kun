@@ -66,8 +66,6 @@ shared_ptr<Peer> Network::connect_peer(string ip, string port)
 
 void Network::broadcast(shared_ptr<Group> group, BCastMessage* message, bool add_stamp)
 {
-  message->BCAST_MARKER = make_channel_marker( local_group, group );
-
   if (add_stamp)
     message->make_stamp( local_peer->get_id() );
   string msg(message->serialize());
@@ -84,6 +82,8 @@ void Network::broadcast(shared_ptr<Group> group, BCastMessage* message, bool add
 void Network::broadcast_data(string content)
 {
   DataMessage* data = new DataMessage(content);
+
+  data->BCAST_MARKER = make_channel_marker(local_group, local_group);
   broadcast(local_group, data, true);
   delete data;
 }
@@ -130,6 +130,8 @@ void Network::answer_join_request(shared_ptr<Peer> peer, unsigned short port)
   BCastMessage* notif = new JoinNotifMessage( false, group->get_id(),
                                               peer->get_id(), peer->get_key(),
                                               peer->get_address(), port );
+  notif->BCAST_MARKER = make_channel_marker( local_group, group );
+
   broadcast(group, notif, true);
   delete notif;
 
@@ -238,8 +240,14 @@ void Network::handle_incoming_message(const system::error_code& error,
         if (emitter->is_known()) 
           log_message(message, emitter);
 
-        if (message->is_broadcast())
-          broadcast(local_group, dynamic_cast<BCastMessage*>(message));
+        if (message->is_broadcast()) {
+          BCastMessage* bcast_message = dynamic_cast<BCastMessage*>(message);
+          string bcast_marker = bcast_message->BCAST_MARKER;
+
+          if (channel_markers.count(bcast_marker))
+            broadcast(groups[ channel_markers[bcast_marker] ], bcast_message);
+
+        }
       }
 
 
