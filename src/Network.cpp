@@ -492,12 +492,17 @@ void Network::acknowledge_join(shared_ptr<Peer> peer, shared_ptr<Group> group)
 
 void Network::print_rings()
 {
+  cout << "This peer: " << local_peer->get_id() << endl;
   GroupMap::iterator g_it;
   for (g_it = groups.begin(); g_it != groups.end(); g_it++) {
 
     cout << "\tIn group ";
     display_chars(g_it->first, 10);
-    cout << " :" << endl;
+    cout << ( g_it->second->get_id() == local_group->get_id() ?
+              " (LOCAL): " : ": " )
+         << endl;
+              
+    
     g_it->second->display_rings();
 
     PeerMap preds = g_it->second->get_predecessors();
