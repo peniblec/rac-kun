@@ -30,7 +30,6 @@ void Network::add_new_peer(shared_ptr<Peer> p)
 
 void Network::join(string entry_ip, string entry_port)
 {
-  // TODO: check if not already CONNECTED
   try {
     shared_ptr<Peer> entry_peer = connect_peer(entry_ip, entry_port);
     local_peer->set_state(PEER_STATE_JOINING);
@@ -206,6 +205,12 @@ void Network::handle_disconnect(shared_ptr<Peer> p)
     }
     else {
       new_peers.erase( p->get_address() );
+    }
+    if (peers.size()==0 && new_peers.size()==0) {
+      groups.clear(); // TODO: last-week-of-internship effort to clean stuff,
+                      // maybe not actually useful
+      local_group.reset();
+      local_peer->set_state(PEER_STATE_NEW);
     }
 }
 

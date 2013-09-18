@@ -24,23 +24,32 @@ using namespace boost;
 using namespace boost::multi_index;
 using boost::asio::ip::tcp;
 
-class Network
+class Network // the program's view of the various entities we are connected to
+              // (groups, channels, peers, ...), where messages are processed
+              // and archived
 {
 private:
   typedef map<string, pair<shared_ptr<Peer>, unsigned short> > JoinMap;
-  // associates IP with peer/listening port
-  typedef map<string, shared_ptr<Group> > GroupMap;
+  // associates an IP address with the pending peer and its listening port
 
-  struct MessageLog {
+  typedef map<string, shared_ptr<Group> > GroupMap; // associates a string (ID)
+                                                    // with a group
+
+  struct MessageLog // stores a message, and keeps track of the number of times
+                    // we've received it from our predecessors (and/or possibly
+                    // other peers)
+  {
     string message;
-    map<string, int> control;
-    // associates a peer ID to the number of times
-    // we received this message from this peer
-
-    bool operator<(const MessageLog ml)const {
+    map<string, int> control; // associates a peer ID with the number of times
+                              // this peer sent us this message
+    /* operator<:
+       - the comparison method for stored messages
+       - uses messages stamps (see Message class) for comparison
+     */
+    bool operator<(const MessageLog ml)const
+    { 
       string my_stamp(message, 1, MSG_STAMP_LENGTH);
       string its_stamp(ml.message, 1, MSG_STAMP_LENGTH);
-
       return my_stamp<its_stamp;
       // return ( memcmp( (message.c_str())[1],
       //                  (ml.message.c_str())[1],
@@ -49,9 +58,9 @@ private:
     }
   };
 
-  // struct used to modify the content of the multi index container;
-  // adds 1 to the number of times we received a message from _peer
-  struct ack_message {
+  struct ack_message // functor used to acknowledge the reception of a message
+                     // from a peer
+  {
     ack_message(shared_ptr<Peer> _peer)
       : peer(_peer) {}
 
@@ -62,17 +71,17 @@ private:
     shared_ptr<Peer> peer;
   };
 
-  // multi index container keeping the logs;
-  // may be accessed with two iterators:
-  // - sequential (order of reception)
-  // - associative (using the message stamp as key)
-  typedef multi_index_container<
+
+  typedef multi_index_container <
     MessageLog,
     indexed_by<
       sequenced<>,
       ordered_unique<identity<MessageLog> >
       >
-    > History;
+    > History; // multi index container keeping the logs, which may be accessed
+               // with two iterators:
+               // - sequential (order of reception)
+               // - associative (using the message stamp as key)
   typedef History::nth_index<LOG_INDEX_TIME>::type LogIndexTime;
   typedef History::nth_index<LOG_INDEX_HASH>::type LogIndexHash;
 

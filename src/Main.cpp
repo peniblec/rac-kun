@@ -45,11 +45,17 @@ int main(int argc, char** argv) {
     }
     else if ( command.compare(COMMAND_JOIN)==0 ) {
 
-      int colon = argument.find(':');
-      string ip( argument.substr(0, colon) );
-      string port( argument.substr(colon+1, argument.size()) );
+      if (local_peer->get_state() != PEER_STATE_NEW)
+        cout << "Cannot join while "
+             << PeerStateNames[local_peer->get_state()] << endl;
 
-      network->join(ip, port);
+      else {
+        int colon = argument.find(':');
+        string ip( argument.substr(0, colon) );
+        string port( argument.substr(colon+1, argument.size()) );
+
+        network->join(ip, port);
+      }
     }
     else if ( command.compare(COMMAND_RINGS)==0 ) {
 
