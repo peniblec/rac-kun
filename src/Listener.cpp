@@ -20,9 +20,8 @@ void Listener::start_accept()
 
   shared_ptr<Peer> new_peer(new Peer(socket));
 
-  acceptor.async_accept(new_peer->get_socket(),
-                        bind(&Listener::handle_accept, this, new_peer,
-                             asio::placeholders::error) );
+  acceptor.async_accept(*socket, bind(&Listener::handle_accept, this, new_peer,
+                                     asio::placeholders::error) );
 }
 
 void Listener::handle_accept(shared_ptr<Peer> new_peer,

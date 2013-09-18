@@ -38,39 +38,18 @@ void Peer::listen()
                                asio::placeholders::bytes_transferred));
 }
 
-void Peer::receive()
-{
-    cout << "- " << get_address() << ": " << get_last_message() << endl;
-}
-
 void Peer::send(string message)
 {
-  // TODO: limit buffer size to MESSAGE_SIZE, loop until whole is sent
-
-  // DEBUG
-
-  // if ((int) message[0] < MESSAGE_TYPE_END) {
-
-  //   DEBUG("Sending a " << MessageTypeNames[(int)message[0]] << " of size " << message.size());
-
-  //   for (uint n=0; n< (message.size()); n++)
-  //     cout << (int) ((unsigned char) message[n]) << (n+1==message.size() ? "" : "-");
-  //   cout << endl;
-  // }
-  // /DEBUG
-
+  // TODO: if message.size() > MESSAGE_SIZE, store somewhere and send later
 
   socket->async_write_some(asio::buffer(message),
-                           bind(&Peer::finish_write, this));
-  //                                asio::placeholders::error));
+                           bind(&Peer::finish_write, this,
+                                asio::placeholders::error));
 }
 
-//void Peer::finish_write(const system::error_code& e)
-void Peer::finish_write()
+void Peer::finish_write(const system::error_code& e)
 {
-  // if (!e)
-  //   DEBUG("THERE I SENT ALL THE DATA");
-  // else
-  //   DEBUG("Peer::finish_write: " << e.message());
+  if (e)
+    DEBUG("Peer::finish_write: " << e.message());
 }
 

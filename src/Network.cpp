@@ -56,10 +56,6 @@ shared_ptr<Peer> Network::connect_peer(string ip, string port)
 
   shared_ptr<Peer> new_peer(new Peer(socket));
 
-  // DEBUG("Connected to entry point at "
-  //       << new_peer->get_socket().local_endpoint().address().to_string()
-  //       << ":" << new_peer->get_socket().local_endpoint().port() );
-        
   return new_peer;
 }
 
