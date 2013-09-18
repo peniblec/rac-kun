@@ -429,14 +429,11 @@ void Network::handle_incoming_message(const system::error_code& error,
 
       delete message;
     }
-    catch (MessageParseException& e) {
-      cout << "Couldn't make sense of this:" << endl;
-      cout << "\t";
+    catch (std::exception& e) {
+      cout << e.what() << endl;
+      cout << "Message bytes:" << endl;
 
-      for (uint n=0; n< (received_message.size()); n++)
-        cout << (int) ((unsigned char) received_message[n])
-             << (n+1==received_message.size() ? "" : "-");
-      cout << endl;
+      display_chars(received_message, received_message.size());
     }
   }  
 }

@@ -5,7 +5,8 @@
 
 using namespace std;
 
-#define MESSAGE_SIZE 1024 // the maximum buffer size used for socket communication
+#define MESSAGE_SIZE 1024 // the maximum buffer size used for socket
+                          // communication 
 #define RINGS_NB 5 // the number of rings per group/channel
 #define GROUP_MAX_SIZE 5 // the maximum number of peers per group (UNUSED)
 
