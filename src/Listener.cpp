@@ -18,25 +18,18 @@ void Listener::start_accept()
 {
   shared_ptr<tcp::socket> socket(new tcp::socket(acceptor.get_io_service()));
 
-  Peer* new_peer(new Peer(socket));
-
-  list<Peer*>::iterator new_peer_it;
-  new_peer_it = pending_peers.insert(pending_peers.begin(), new_peer);
+  shared_ptr<Peer> new_peer(new Peer(socket));
 
   acceptor.async_accept(new_peer->get_socket(),
-                        bind(&Listener::handle_accept, this, new_peer_it,
+                        bind(&Listener::handle_accept, this, new_peer,
                              asio::placeholders::error) );
 }
 
-void Listener::handle_accept(list<Peer*>::iterator new_peer_it,
+void Listener::handle_accept(shared_ptr<Peer> new_peer,
                              const system::error_code& error)
 {
   if (!error) {
-    shared_ptr<Peer> new_peer(*new_peer_it);
-
     network->add_new_peer(new_peer);
-
-    pending_peers.erase(new_peer_it);
 
     DEBUG("Listener::handle_accept: Now in touch with peer @" << new_peer->get_address() << ":" << new_peer->get_port() << ".");
 

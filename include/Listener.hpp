@@ -11,22 +11,36 @@
 using namespace boost;
 using boost::asio::ip::tcp;
 
-class Listener {
+class Listener // An acceptor listening on a predefined port, establishes TCP
+               // connections, and sends the resulting new peer to Network
+{
 
 public:
-  Listener(shared_ptr<asio::io_service> io_service, shared_ptr<Network> _network);
+  Listener(shared_ptr<asio::io_service> io_service,
+           shared_ptr<Network> _network);
 
 private:
+  /* start_accept:
+     - creates a new socket, and makes an asynchronous accept (setting
+       handle_accept as the handler)
+  */
   void start_accept();
 
-  void handle_accept(list<Peer*>::iterator new_peer_it,
+  /* handle_accept:
+     - handler for asynchronous accept
+     - sends the new peer to Network
+     - calls start_accept again
+  */
+  void handle_accept(shared_ptr<Peer> new_peer,
                      const system::error_code& error);
 
 
-  tcp::acceptor acceptor;
-  shared_ptr<Network> network;
-  // TODO: remove list (acceptor can only handle 1 socket/time anyway)
-  list<Peer*> pending_peers;
+  tcp::acceptor acceptor; // an object accepting connections on a predefined
+                          // port
+  shared_ptr<Network> network; // the program's view of the network ; the entity
+                               // managing new peers
+  shared_ptr<Peer> pending_peer; // the "blank peer" whose socket is waiting to
+                                 // be used
 };
 
 #endif
