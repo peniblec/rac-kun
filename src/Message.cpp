@@ -14,6 +14,7 @@ Message::~Message()
 
 void Message::make_stamp(string peer_id)
 {
+  // stamp recipy: hash( author_id || timestamp )
   string input = peer_id;
 
   input.append( itos(milliseconds_since_epoch()) );
@@ -36,6 +37,10 @@ void Message::display()
 
 string Message::serialize()
 {
+  // typical message format:
+  // byte[0]: type
+  // byte[1-20]: stamp
+  // byte[21+]: message-specific info
   string s;
   s.push_back(type);
   s.append(stamp);
