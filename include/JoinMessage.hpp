@@ -5,16 +5,17 @@
 
 #include "Message.hpp"
 
-struct JoinMessage : Message
+struct JoinMessage : Message // a JOIN request, sent by a node wishing to enter
+                             // the system
 {
   JoinMessage(string _id, string _pub_k, unsigned short _port);
   
   string serialize();
   void display();
 
-  const string id;
-  const string pub_k;
-  const unsigned short port;
+  const string id; // the new peer's unique ID
+  const string pub_k; // (placeholder) the new peer's public ID key
+  const unsigned short port; // the new peer's listening port
 };
 
 

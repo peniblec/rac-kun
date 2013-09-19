@@ -5,14 +5,15 @@
 
 #include "BCastMessage.hpp"
 
-struct DataMessage : BCastMessage
+struct DataMessage : BCastMessage // message used to pass cleartext
+                                  // information along the rings
 {
   DataMessage(string _data);
   
   string serialize();
   void display();
 
-  const string data;
+  const string data; // a stream of bytes (for now, displayed as cleatext)
 };
 
 

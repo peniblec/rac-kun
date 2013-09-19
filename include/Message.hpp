@@ -10,23 +10,42 @@ struct MessageParseException : public std::exception {
   { return "Could not parse message"; }
 };
 
-struct Message
+struct Message // a message structured according to the RAC protocol
 {
   typedef MessageType Type;
 
   virtual ~Message();
 
+  /* serialize:
+     - get a string containing the message's information, ready to be sent
+       across the network
+   */
   virtual string serialize();
+
+  /* display:
+     - show the message's content
+   */
   virtual void display();
 
-  void make_stamp(string peer_id);
-  void set_stamp(string _stamp);
+  /* make_stamp:
+     - create a unique stamp to allow peers to recognize this message when it's
+       broadcast
 
+     - peer_id: the original emitter of the message
+   */
+  void make_stamp(string peer_id);
+
+  /* is_broadcast:
+     - returns whether this message should be passed along the rings or if it's
+       just a one-time signal
+
+     - by default, returns false
+   */
   virtual bool is_broadcast();
 
-
-  const Type type;
-  string stamp;
+  const Type type; // type of message, used for serialization (see individual
+                   // classes for details)
+  string stamp; // unique ID used to recognize the message after broadcasting it
 
 protected:
   Message(Type _type);

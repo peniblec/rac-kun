@@ -5,7 +5,9 @@
 
 #include "BCastMessage.hpp"
 
-struct JoinNotifMessage : BCastMessage
+struct JoinNotifMessage : BCastMessage // a notification containing all the info
+                                       // a node needs to contact the new peer
+                                       // and add it to its view
 {
   JoinNotifMessage(bool _CHANNEL,
                    string _group_id, string _peer_id, string _pub_k,
@@ -14,12 +16,24 @@ struct JoinNotifMessage : BCastMessage
   string serialize();
   void display();
 
-  const bool CHANNEL;
-  const string group_id;
-  const string peer_id;
-  const string pub_k;
-  const string ip;
-  const unsigned short port;
+  const bool CHANNEL; // a flag indicating where in the joining process the new
+                      // peer is:
+                      // - if false, the peer is only joining its own group, and
+                      //   any node who is not in this group should not add the
+                      //   peer to their view right away
+                      // - if true, the peer has completed the JOIN procedure
+                      //   inside its own group, and is now joining the channels
+
+  const string group_id; // the ID of the group this peer should join (all nodes
+                         // should use peer_id to check whether this is the
+                         // correct group)
+
+  const string peer_id; // the peer's unique ID
+
+  const string pub_k; // (placeholder) the peer's public ID key
+
+  const string ip; // the IP address to use to connect to the peer
+  const unsigned short port; // the new peer's listening port
 
 };
 
