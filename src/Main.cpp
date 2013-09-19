@@ -17,17 +17,22 @@ int main(int argc, char** argv) {
 
   init_settings(argc, argv);
 
-  // setup and start local_listener in other thread
+  // setup an "io_service", ie a Boost.Asio object which will create sockets,
+  // call handlers... on demand
   shared_ptr<asio::io_service> io_service(new asio::io_service);
   shared_ptr<tcp::resolver> resolver(new tcp::resolver(*io_service));
 
+  // create minimal network: the local peer, and an (empty) network view
   shared_ptr<Peer> local_peer = create_local_peer();
   shared_ptr<Network> network(new Network(io_service, resolver, local_peer));
 
+  // the acceptor
   Listener listener(io_service, network);
 
+  // launch io_service.run() in another thread
   thread io_service_thread(bind(&asio::io_service::run, io_service));
 
+  // if an entry point was specified in configuration, try to connect right away
   if ( settings.ENTRY_POINT_PORT )
     network->join(settings.ENTRY_POINT_IP, itos(settings.ENTRY_POINT_PORT));
 
@@ -71,13 +76,21 @@ int main(int argc, char** argv) {
     }
     else if ( command.compare(COMMAND_HELP)==0 ) {
 
-      cout << "What to do?" << endl
-           << "send <arg>\n\tSend <arg> to all peers" << endl
-           << "join <arg>\n\tJoin a session using <arg> as an entry point" << endl
-           << "\twhere <arg> is IP:port or hostname:port" << endl
-           << "broadcast <arg>\n\tUse rings to broadcast a message" << endl
-           << "rings\n\tDisplay the constitution of the current rings" << endl
-           << "logs\n\tPrint all the messages received up until now" << endl;
+    cout << "UI commands:" << endl
+         << "\tsend <arg>" << endl
+         << "\t\tSend <arg> to all peers" << endl
+         << "\tjoin <arg>" << endl
+         << "\t\tJoin a session using <arg> as an entry point" << endl
+         << "\t\twhere <arg> is IP:port or hostname:port" << endl
+         << "\tbroadcast <arg>" << endl
+         << "\t\tUse rings to broadcast a message" << endl
+         << "\trings" << endl
+         << "\t\tDisplay the constitution of the current rings" << endl
+         << "\tlogs" << endl
+         << "\t\tPrint all the messages received up until now" << endl
+         << "\thelp" << endl
+         << "\t\tDisplay all available commands" << endl
+         << endl;
     }
     else
       cout << "Invalid command." << endl;

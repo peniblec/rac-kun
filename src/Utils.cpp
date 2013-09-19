@@ -17,10 +17,12 @@ using boost::asio::ip::tcp;
 
 shared_ptr<Peer> create_local_peer()
 {
+  // create Peer with dummy socket
   shared_ptr<tcp::socket> null_ptr;
   shared_ptr<Peer> local_peer(new Peer(null_ptr, true));
 
-  // DUMMY ID GENERATION
+  // dummy ID generation
+  // randomize hostname to allow several nodes on the same machine
 
   int non_random = 13;
   char name[ID_LENGTH + 1];
@@ -34,9 +36,9 @@ shared_ptr<Peer> create_local_peer()
   }
   string id(name);
 
-  // /END DUMMY ID GENERATION
+  // /end dummy ID generation
 
-  local_peer->init( id, "AAAAA" );
+  local_peer->init( id, "AAAAA" ); // "AAAAA" = dummy public ID key
 
   return local_peer;
 }
@@ -64,24 +66,10 @@ template string itos<long long>(long long ll);
 Message* parse_message(string msg)
 {
   Message::Type msg_type = (Message::Type)msg[0];
-  
-  // DEBUG
-
-  // if (msg_type == MESSAGE_TYPE_JOIN_NOTIF) {
-
-  //   DEBUG("Receiving a " << MessageTypeNames[msg_type] << " of size " << msg.size());
-
-  //   for (uint n=MSG_STAMP_OFFSET; n< (MSG_STAMP_OFFSET+MSG_STAMP_LENGTH); n++)
-  //     cout << (int) ((unsigned char) msg[n]) << '-';
-  //   cout << endl;
-  // }
-  // // /DEBUG
 
   Message* m;
-
-  // try{
   
-  unsigned int offset = 1 + MSG_STAMP_LENGTH;
+  unsigned int offset = 1 + MSG_STAMP_LENGTH; // offset before useful info
 
   switch (msg_type) {
   case MESSAGE_TYPE_JOIN:
@@ -121,7 +109,8 @@ Message* parse_message(string msg)
       unsigned short port;
       istringstream ( endpoint.substr( colon+1, endpoint.size() ) ) >> port;
  
-      m = new JoinNotifMessage(channel_flag, group_id, peer_id, pub_k, ip, port);
+      m = new JoinNotifMessage(channel_flag, group_id, peer_id, pub_k,
+                               ip, port);
       ((JoinNotifMessage*)m)->BCAST_MARKER = bcast_marker;
     }
     break;
@@ -159,28 +148,12 @@ Message* parse_message(string msg)
   default:
     throw MessageParseException();
   }
+
+  // retrieve stamp
   string stamp(msg, 1, MSG_STAMP_LENGTH);
   m->stamp = stamp;
 
   return m;
-  // }
-  // catch (std::exception& e) {
-  //   cout << e.what() << endl;
-  // // DEBUG
-
-  // if (msg_type < MESSAGE_TYPE_END) {
-
-  //   DEBUG("Receiving a " << MessageTypeNames[msg_type] << " of size " << msg.size());
-
-  //   for (uint n=0; n< msg.size() ; n++)
-  //     cout << (int) ((unsigned char) msg[n]) << '-';
-  //   cout << endl;
-  // }
-  // throw MessageParseException();
-
-  // // // /DEBUG    
-
-  // }
 }
 
 string make_hash(string input)
@@ -190,11 +163,12 @@ string make_hash(string input)
   byte digest[CryptoPP::SHA1::DIGESTSIZE];
 
   hash.CalculateDigest( digest, (byte*) input.c_str(), input.size() );
+  // to make it human-readable:
   // http://www.cryptopp.com/wiki/HexEncoder
 
   string output((char*)digest, sizeof(digest));
   // using the (char*, size_t) constructor:
-  // (char*) constructor will truncate after the first null byte
+  // plain (char*) constructor will truncate after the first null byte
 
   return output;
 }
@@ -212,5 +186,6 @@ void display_chars(string s, unsigned int n)
   n = ( n <= s.size() ? n : s.size() );
 
   for (unsigned int i = 0; i<n; i++)
-    cout << (int) ((unsigned char) s[i]) << (i+1==s.size() ? "." : i+1==n ? "..." : "-");
+    cout << (int) ((unsigned char) s[i])
+         << (i+1==s.size() ? "." : i+1==n ? "..." : "-");
 }

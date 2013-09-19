@@ -42,33 +42,64 @@ void init_settings(int argc, char** argv)
 {
   using namespace boost::program_options;
 
+  // specify command line and configuration file options
+
   options_description config("Configuration");
   config.add_options()
     ("listen_port,l", value<unsigned short>(),
-     "The port on which incoming connections will be handled (default: random)")
+     "The port on which incoming connections will be handled"
+     "\n- example: any number in [1, 65535]"
+     "\n- default: random\n")
     ("entry_point,e", value<string>(),
-     "The pair \"ip/hostname:port\" for the entry point to connect to (default: none, program will wait for a JOIN command)")
+     "The pair \"ip/hostname:port\" for the entry point to connect to "
+     "\n- example: 127.0.0.1:1764"
+     "\n- default: none, will wait for a JOIN command\n")
     ("ui", value<bool>(),
-     "Show user interface, enable commands (default: true)")
+     "Show user interface, enable commands"
+     "\n- example: true, false"
+     "\n- default: true\n")
     ("config_file", value<string>(),
-     "The location for the configuration file (default: \"rac.conf\")")
+     "The location for the configuration file"
+     "\n(\"--config_file\" may be omitted)"
+     "\n- default: \"rac.conf\"\n")
     ("help,h",
      "Displays options specification, stops program")
     ;
+
+  // allow config file to be specified without "--config_file"
   positional_options_description pos_options;
   pos_options.add("config_file", 1);
 
   variables_map cmd_line_map;
 
-  store(command_line_parser(argc, argv).options(config).positional(pos_options).run(),
-        cmd_line_map);
+  store(command_line_parser(argc, argv).options(config).positional(pos_options)
+        .run(), cmd_line_map);
   notify(cmd_line_map);
 
   if (cmd_line_map.count("help")) {
-    cout << config << endl;
+    // show configuration and commands, then exit
+
+    cout << config << endl << endl;
+    cout << "UI commands:" << endl
+         << "\tsend <arg>" << endl
+         << "\t\tSend <arg> to all peers" << endl
+         << "\tjoin <arg>" << endl
+         << "\t\tJoin a session using <arg> as an entry point" << endl
+         << "\t\twhere <arg> is IP:port or hostname:port" << endl
+         << "\tbroadcast <arg>" << endl
+         << "\t\tUse rings to broadcast a message" << endl
+         << "\trings" << endl
+         << "\t\tDisplay the constitution of the current rings" << endl
+         << "\tlogs" << endl
+         << "\t\tPrint all the messages received up until now" << endl
+         << "\thelp" << endl
+         << "\t\tDisplay all available commands" << endl
+         << endl;
+
     exit(EXIT_SUCCESS);
   }
 
+  // find configuration file in command line, or try to open "rac.conf"
   string config_file = ( cmd_line_map.count("config_file") ?
                          cmd_line_map["config_file"].as<string>() :
                          "rac.conf" );
@@ -82,6 +113,7 @@ void init_settings(int argc, char** argv)
     cout << "Couldn't find configuration file." << endl;
   }
 
+  // find listen port, default to random
   settings.LISTEN_PORT =
     ( cmd_line_map.count("listen_port")
       ? cmd_line_map["listen_port"].as<unsigned short>()
@@ -89,6 +121,9 @@ void init_settings(int argc, char** argv)
           ? conf_file_map["listen_port"].as<unsigned short>()
           : 0 ) );
 
+  // find entry point
+  // if we can't parse the remote port, set it to 0 to tell the app not to try
+  // to connect
   if (cmd_line_map.count("entry_point") || conf_file_map.count("entry_point")) {
 
     string endpoint = ( cmd_line_map.count("entry_point")
@@ -101,7 +136,8 @@ void init_settings(int argc, char** argv)
     settings.ENTRY_POINT_IP = ip;
     
     unsigned short port;
-    if ( (istringstream( endpoint.substr(colon+1, endpoint.size()) ) >> port).fail() )
+    if ( (istringstream( endpoint.substr(colon+1, endpoint.size()) ) >> port)
+         .fail() )
       settings.ENTRY_POINT_PORT = 0;
     else
       settings.ENTRY_POINT_PORT = port;
@@ -110,6 +146,7 @@ void init_settings(int argc, char** argv)
   else
     settings.ENTRY_POINT_PORT = 0;
 
+  // find whether user wants UI or not, default to true
   settings.UI = ( cmd_line_map.count("ui")
                   ? cmd_line_map["ui"].as<bool>()
                   : ( conf_file_map.count("ui")
