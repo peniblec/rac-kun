@@ -35,18 +35,18 @@ Development notes
 Current feature being implemented: groups and channels
 
 What's done:
-- The notion of group and channel exists
+- The notions of group and channel exist
 - *Network* has a list of groups sorted by ID
 - JOIN Notification (resp. Acknowledgements) features a *group_id* field, which
   corresponds to the group the new node should be sorted into (resp. the node
   the acknowledger belongs to)
-- Broadcast messages have a channel marker which indicate in which rings they
+- Broadcast messages have a channel marker which indicates in which rings they
   are circulating
 - Likewise, *Network* has a map associating a channel marker with the
   corresponding group ID
-- JOIN Notification and Acknowledgements are (*should be*) interpreted correctly
-  whether the new node is currently joining its group or the surrounding
-  channels
+- JOIN Notification and Acknowledgements are ( *should be* ) interpreted
+  correctly whether the new node is currently joining its group or the
+  surrounding channels
     - NB: *JoinNotification* has a *CHANNEL* flag which indicates whether the
       node is only joining its own group, or the other channels.
       Consider a scenario where the entry point *e*, belonging to group
@@ -58,20 +58,19 @@ What's done:
 What's not done:
 - When the new node has finished joining its group, it does not initiate any
   procedure to join the surrounding channels (and discover the other groups out
-  there). Possible solution:
+  there). Possible solution: (2, 3 and 5 are already implemented)
     1.  either the new node *n*, the entry point, or someone from the new node's
         group starts broadcasting a new JOIN Notif (with the *CHANNEL* flag on)
     2.  all nodes not in *n*'s group will add *n* to their view of its group,
         and update their channel rings ; they will also send JOIN Acks to *n*
-    3.  all nodes in *n*'s group will add *n* to all their view of the channels,
-        and update the rings
+    3.  all nodes in *n*'s group will add *n* to all their channels, and update
+        the rings 
     4.  the guy from 1. will send READY to *n*
     5.  *n* will only send READY Notifs to members of the other groups
-  (2, 3 and 5 are already implemented)
 - When the group goes beyond its maximum size, nothing happens. Possible 
-  solutions: (coming)   
+  solution: (coming)
 - When the group goes below its minimum size, nothing happens. Possible
-  solutions: (coming)
+  solution: (coming)
 
 
 Credits
