@@ -430,6 +430,10 @@ void Network::handle_incoming_message(const system::error_code& error,
 
           shared_ptr<Group> group = it->second;
 
+          bool notify = ( group->get_id() != local_group->get_id()
+                          || local_peer->get_state() != PEER_STATE_CONNECTED );
+          // ie only send Notifs to local group if we're not CONNECTED
+
           // if this is not the local group, just add ourselves to the channel
           // rings 
           if (group->get_id() != local_group->get_id()) {
@@ -444,24 +448,26 @@ void Network::handle_incoming_message(const system::error_code& error,
             local_group->update_neighbours(local_peer);
           }
 
+          if ( notify ) {
           // send READY Notification to our direct predecessors and successors
-          Message* notif = new ReadyNotifMessage();
+            Message* notif = new ReadyNotifMessage();
 
-          notif->make_stamp(local_peer->get_id());
-          string notif_msg = notif->serialize();
+            notif->make_stamp(local_peer->get_id());
+            string notif_msg = notif->serialize();
 
-          PeerMap preds = group->get_predecessors();
-          PeerMap succs = group->get_successors();
+            PeerMap preds = group->get_predecessors();
+            PeerMap succs = group->get_successors();
 
-          PeerMap directs(preds);
-          directs.insert( succs.begin(), succs.end() );
+            PeerMap directs(preds);
+            directs.insert( succs.begin(), succs.end() );
 
-          for (PeerMap::iterator it=directs.begin(); it!=directs.end(); it++)
-            it->second->send(notif_msg);
+            for (PeerMap::iterator it=directs.begin(); it!=directs.end(); it++)
+              it->second->send(notif_msg);
 
-          log_message( notif, local_peer );
+            log_message( notif, local_peer );
         
-          delete notif;
+            delete notif;
+          }
         }
       }
         break;
