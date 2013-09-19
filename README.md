@@ -58,8 +58,16 @@ What's done:
 What's not done:
 - When the new node has finished joining its group, it does not initiate any
   procedure to join the surrounding channels (and discover the other groups out
-  there). Possible solutions:
-    - 
+  there). Possible solution:
+    1.  either the new node *n*, the entry point, or someone from the new node's
+        group starts broadcasting a new JOIN Notif (with the *CHANNEL* flag on)
+    2.  all nodes not in *n*'s group will add *n* to their view of its group,
+        and update their channel rings ; they will also send JOIN Acks to *n*
+    3.  all nodes in *n*'s group will add *n* to all their view of the channels,
+        and update the rings
+    4.  the guy from 1. will send READY to *n*
+    5.  *n* will only send READY Notifs to members of the other groups
+  (2, 3 and 5 are already implemented)
 - When the group goes beyond its maximum size, nothing happens. Possible 
   solutions: (coming)   
 - When the group goes below its minimum size, nothing happens. Possible
