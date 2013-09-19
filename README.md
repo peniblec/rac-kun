@@ -29,6 +29,22 @@ Dependencies:
 - Crypto++ 5.6.1
 
 
+Development notes
+================================================================================
+
+Current feature being implemented: groups and channels
+
+What's done:
+- The notion of group and channel exists
+- `Network` has a list of groups sorted by ID
+- JOIN Notification (resp. Acknowledgements) feature a *group_id* field, which
+  corresponds to the group the new node should be sorted into (resp. the node
+  the acknowledger belongs to)
+
+What's not done:
+
+
+
 Credits
 ================================================================================
 
