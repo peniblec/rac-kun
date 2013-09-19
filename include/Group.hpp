@@ -10,7 +10,8 @@
 
 using namespace boost;
 
-class Group {
+class Group // a subset of the peers composing the system, organized in rings
+{
 
 public:
 
@@ -80,8 +81,9 @@ private:
   PeerMap peers; // the peers belonging to this group
   string id;
 
-  PeerMap predecessors;
-  PeerMap successors;
+  PeerMap predecessors; // the local peer's successors in the various
+                        // rings, sorted by their ID
+  PeerMap successors; // resp. predecessors
 
   Ring rings[RINGS_NB]; // if group is local, those are group rings;
                         // otherwise, those are the channel rings shared between

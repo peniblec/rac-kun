@@ -64,12 +64,8 @@ void Ring::display()
   cout << "Ring index: " << index << endl;
   for (it=ring.begin(); it!=ring.end(); it++) {
 
-    cout << it->second->get_id() << " " 
-         << PeerStateNames[it->second->get_state()] /*<< " with key: " << endl << "\t";
-    for (uint n=0; n< (it->first.size()); n++) {
-      cout << (int) ((unsigned char) it->first[n]) << (n+1==it->first.size() ? "" : "-");
-    }
-    cout << " [" << it->first.size() << "]" */ << endl;
+    cout << it->second->get_id() << " "
+         << PeerStateNames[it->second->get_state()] << endl;
   }
 }
 

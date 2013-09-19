@@ -15,26 +15,73 @@ struct PeerNotFoundException : public std::exception {
   { return "Could not find peer in this ring"; }
 };
 
-class Ring {
+class Ring // a structure of peers sorted according a hash function
+{
 
 public:
 
   Ring(int _index = 0);
 
-  string create_key(string id);
+  /* add_peer:
+     - add a peer to the structure
+
+     - p: the peer to add
+   */
   void add_peer(shared_ptr<Peer> p);
+
+  /* remove_peer:
+     - attempt to find the peer in the structure; if found, remove him
+
+     - p: the peer to remove
+   */
   void remove_peer(shared_ptr<Peer> p);
 
+  /* get_successor:
+     - find the peer indexed right after the specified peer
+
+     - p: the peer whose successor should be returned;
+     - throws if p is not found in the structure, or if it contains only one
+       peer 
+   */
   shared_ptr<Peer> get_successor(shared_ptr<Peer> p);
+
+  /* get_predecessor:
+     - find the peer indexed right before the specified peer
+
+     - p: the peer whose predecessor should be returned;
+     - throws if p is not found in the structure, or if it contains only one
+       peer 
+   */
   shared_ptr<Peer> get_predecessor(shared_ptr<Peer> p);
 
-  void display();  
+  /*  display:
+      - show every peer this ring contains, sorted according to their hash
+   */
+  void display();
 
 private:
+  /* create_key:
+     - called when a peer needs to be added/found in the structure
+     - generate a hash that may be used to index the peer in this ring
+
+     - id: the peer's unique ID
+     - returns the hash used to sort the peer
+   */
+  string create_key(string id);
+
+  /* find_peer:
+     - attempt to find the specified peer in the structure
+
+     - p: the peer to find
+     - returns an iterator to the peer (which will be ring.end() if p is not
+       present in the ring)
+   */
   PeerMap::iterator find_peer(shared_ptr<Peer> p);
 
-  int index;
-  PeerMap ring;
+  int index; // this ring's index, used to create hashes which sort peers in a
+             // random order
+  PeerMap ring; // contains this ring's peers, sorted randomly according to a
+                // hash function
 };
 
 
