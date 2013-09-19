@@ -334,8 +334,6 @@ void Network::handle_incoming_message(const system::error_code& error,
 
         // if the group exists, and ( it's ours ) ^ ( the peer is joining
         // channels now ), acknowledge his join
-        // (if it's our group and the channel flag is on, that means we should
-        //  already know him, so there's nothing to do)
 
         if ( it!=groups.end() && ( (msg->group_id==local_group->get_id())
                                    ^ msg->CHANNEL ) ) { 
@@ -355,6 +353,28 @@ void Network::handle_incoming_message(const system::error_code& error,
           new_peer->start_listening(listen_handler);
 
           acknowledge_join(new_peer, it->second);
+        }
+
+        // if it's our group and the channel flag is on, that means we should
+        // already know him, so we just have to add him to channel rings
+
+        else if ( it!=groups.end() && msg->CHANNEL ) { // implying group==local
+          PeerMap::iterator p_it = peers.find( msg->peer_id );
+
+          if ( p_it != peers.end() ) {
+            shared_ptr<Peer> peer = p_it->second;
+
+            // update the channels
+            for (GroupMap::iterator it=groups.begin(); it!=groups.end(); it++) {
+
+              if (it->second->get_id() != local_group->get_id()) {
+                it->second->add_to_rings(peer);
+                it->second->update_neighbours(local_peer);
+              }
+            }
+
+          }
+
         }
       }
         break;
@@ -489,23 +509,8 @@ void Network::acknowledge_join(shared_ptr<Peer> peer, shared_ptr<Group> group)
 
   peers[ peer->get_id() ] = peer;
 
-  if (group->get_id() == local_group->get_id()) {
-
-    for (GroupMap::iterator it = groups.begin(); it!=groups.end(); it++) {
-
-      if (it->second->get_id() == local_group->get_id())
-        it->second->add_peer(peer);
-      else
-        it->second->add_to_rings(peer);
-
-      it->second->update_neighbours(local_peer);
-    }
-  }
-  else {
-
-    group->add_peer(peer);
-    group->update_neighbours(local_peer);
-  }
+  group->add_peer(peer);
+  group->update_neighbours(local_peer);
 
   // send a JOIN Acknowledgement so that he knows about us
 
