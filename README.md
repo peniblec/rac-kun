@@ -16,7 +16,7 @@ Implementing:
 
 Not implemented:
 - ID and pseudonym key pairs
-- Identifier computation
+- ID computation
 - Onion routing
 - Checking for misbehaviour
 
@@ -37,12 +37,25 @@ Current feature being implemented: groups and channels
 What's done:
 - The notion of group and channel exists
 - `Network` has a list of groups sorted by ID
-- JOIN Notification (resp. Acknowledgements) feature a *group_id* field, which
+- JOIN Notification (resp. Acknowledgements) features a *group_id* field, which
   corresponds to the group the new node should be sorted into (resp. the node
   the acknowledger belongs to)
+- Broadcast messages have a channel marker which indicate in which rings they
+  are circulating
+- Likewise, `Network` has a map associating a channel marker with the
+  corresponding group ID
+- JOIN Notification and Acknowledgements are (*should be*) interpreted correctly
+  whether the new node is currently joining its group or the surrounding
+  channels 
 
 What's not done:
-
+- When the new node has finished joining its group, it does not initiate any
+  procedure to join the surrounding channels (and discover the other groups out
+  there). Possible solutions: (coming)
+- When the group goes beyond its maximum size, nothing happens. Possible 
+  solutions: (coming)   
+- When the group goes below its minimum size, nothing happens. Possible
+  solutions: (coming)
 
 
 Credits
