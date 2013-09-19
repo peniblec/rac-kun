@@ -13,13 +13,17 @@
 Network::Network(shared_ptr<asio::io_service> _ios,
                  shared_ptr<tcp::resolver> _resolver,
                  shared_ptr<Peer> _local_peer)
-  : io_service(_ios), resolver(_resolver), local_peer(_local_peer), join_token(true),
+  : io_service(_ios), resolver(_resolver),
+    local_peer(_local_peer), join_token(true),
     h_logs( logs.get<LOG_INDEX_HASH>() ), t_logs( logs.get<LOG_INDEX_TIME>() )
 {
 }
 
 void Network::add_new_peer(shared_ptr<Peer> p)
 {
+  // store info about how to reach this new peer, start listening for incoming
+  // messages
+
   new_peers[ p->get_address() ] = pair<shared_ptr<Peer>, unsigned short>(p, 0);
 
   Peer::Handler listen_handler = bind(&Network::handle_incoming_message, this,
@@ -30,6 +34,10 @@ void Network::add_new_peer(shared_ptr<Peer> p)
 
 void Network::join(string entry_ip, string entry_port)
 {
+  // create a peer corresponding to the entry point (keep it NEW, if he does not
+  // belong to our future group, we should not care about it for now), try to
+  // reach him, send a JOIN request
+
   try {
     shared_ptr<Peer> entry_peer = connect_peer(entry_ip, entry_port);
     local_peer->set_state(PEER_STATE_JOINING);
@@ -48,6 +56,9 @@ void Network::join(string entry_ip, string entry_port)
 
 shared_ptr<Peer> Network::connect_peer(string ip, string port)
 {
+  // try to connect to the specified endpoint, create a peer with the resulting
+  // socket
+
   tcp::resolver::query query(ip, port);
   tcp::resolver::iterator endpoint_iterator = resolver->resolve(query);
 
@@ -59,8 +70,12 @@ shared_ptr<Peer> Network::connect_peer(string ip, string port)
   return new_peer;
 }
 
-void Network::broadcast(shared_ptr<Group> group, BCastMessage* message, bool add_stamp)
+void Network::broadcast(shared_ptr<Group> group, BCastMessage* message,
+                        bool add_stamp)
 {
+  // create a unique ID (stamp) for the message if asked, send it to the
+  // successors from the correct group, then log the message
+  
   if (add_stamp)
     message->make_stamp( local_peer->get_id() );
   string msg(message->serialize());
@@ -76,6 +91,8 @@ void Network::broadcast(shared_ptr<Group> group, BCastMessage* message, bool add
 
 void Network::broadcast_data(string content)
 {
+  // use local group rings to broadcast some data
+
   DataMessage* data = new DataMessage(content);
 
   data->BCAST_MARKER = make_channel_marker(local_group, local_group);
@@ -95,6 +112,8 @@ void Network::send_all(string message)
 
 void Network::send(Message* message, shared_ptr<Peer> peer)
 {
+  // make stamp, send, log
+
   message->make_stamp( local_peer->get_id() );
   string msg(message->serialize());
 
@@ -118,6 +137,9 @@ void Network::send_ready(const system::error_code& error, shared_ptr<Peer> peer)
 
 void Network::answer_join_request(shared_ptr<Peer> peer, unsigned short port)
 {
+  // grab join token, determine correct group for this new peer, broadcast a
+  // JOIN Notification to this group
+
   join_token = false;
   shared_ptr<Group> group = local_group;
   // TODO: replace with computation based on peer IDs - see RAC III.C.Joining
@@ -132,9 +154,13 @@ void Network::answer_join_request(shared_ptr<Peer> peer, unsigned short port)
 
   new_peers.erase( peer->get_address() );
 
+  // if the peer is sorted into our group, send a JOIN Acknowledgement right
+  // away (we won't care about the Notif since we sent it)
+  // else, we'll send the Ack when the peer is ready to join channels
   if (group->get_id() == local_group->get_id())
     acknowledge_join(peer, group);
 
+  // set timer before sending READY signal
   shared_ptr<asio::deadline_timer> t
     (new asio::deadline_timer(*io_service, posix_time::seconds(READY_TIME)));
   ready_timers[ peer->get_id() ] = t;
@@ -148,6 +174,7 @@ void Network::check_for_new_peers()
 {
   JoinMap::iterator it = new_peers.begin();
 
+  // ignore nodes who haven't sent a JOIN request yet
   while ( it!=new_peers.end() && !(it->second.first->is_known()) )
     it++;
 
@@ -178,7 +205,8 @@ void Network::handle_disconnect(shared_ptr<Peer> p)
     if ( peers.erase( p->get_id() ) ) {
 
       if (local_group->remove_peer(p)) {
-        // peer must be removed from all channels
+        // the peer belonged to our group, so we'll have to update all our
+        // channels 
         GroupMap::iterator it;
         for (it = groups.begin(); it!=groups.end(); it++) {
           it->second->remove_peer(p);
@@ -186,7 +214,8 @@ void Network::handle_disconnect(shared_ptr<Peer> p)
         }
       }
       else {
-
+        // the peer belonged to another group, so we'll just have to update that
+        // one 
         bool found(false);
         GroupMap::iterator it = groups.begin();
 
@@ -214,6 +243,7 @@ void Network::handle_incoming_message(const system::error_code& error,
                                       size_t bytes_transferred,
                                       shared_ptr<Peer> emitter)
 {
+  // EOF is the error raised by Boost.Asio when the transmission is closed
   if (error == asio::error::eof) 
     handle_disconnect(emitter);
 
@@ -231,17 +261,22 @@ void Network::handle_incoming_message(const system::error_code& error,
       LogIndexHash::iterator it = find_log(message);
 
       if (it != h_logs.end()) {
-        h_logs.modify(it, ack_message(emitter));
-        delete message;
         // either we sent this message, or we've already received it
         // (and forwarded it), so we shouldn't have anything else to do
+
+        h_logs.modify(it, ack_message(emitter));
+        delete message;
+
         return;
+
       }
       else  {
-        if (emitter->is_known()) 
+        if (emitter->is_known())
           log_message(message, emitter);
 
         if (message->is_broadcast()) {
+          // use the broadcast marker to figure out in which rings it belongs
+          // (either our local group's rings, or some channel's rings)
           BCastMessage* bcast_message = dynamic_cast<BCastMessage*>(message);
           string bcast_marker = bcast_message->BCAST_MARKER;
 
@@ -250,36 +285,39 @@ void Network::handle_incoming_message(const system::error_code& error,
 
         }
       }
-
-
+      // process the message
       switch (message->type) {
 
       case MESSAGE_TYPE_JOIN: {
-        // if we've been alone so far, consider we constitute a functional network
         if (local_peer->get_state() != PEER_STATE_CONNECTED) {
+          // if we've been alone so far, create a group and pose as a functional
+          // network 
           local_peer->set_state(PEER_STATE_CONNECTED);
 
-          string concat( local_peer->get_id() + itos(milliseconds_since_epoch()) ) ;
+          string concat( local_peer->get_id()
+                         + itos(milliseconds_since_epoch()) ) ;
           string id = make_hash(concat);
           local_group = create_group(id);
-          channel_markers.insert(pair<string, string>
-                                 (make_channel_marker(local_group, local_group), id));
+
+          channel_markers.insert
+            ( pair<string, string>
+              (make_channel_marker(local_group, local_group), id) );
 
           local_group->add_to_rings(local_peer);
         }
 
-        // As the entry point for the emitter, we will
-        // - broadcast its join request (as a join notif) to the group
-        // - move emitter from new_peers to joining_peers
-        // - wait for T, then send READY to emitter
-        // - add it to correct position in rings
-
+        // fill info about the peer, log his request
+        
         JoinMessage* msg = dynamic_cast<JoinMessage*>(message);
 
         emitter->init( msg->id, msg->pub_k );
         emitter->set_state( PEER_STATE_JOINING );
 
         log_message(message, emitter);
+
+        // as the entry point for the emitter, if no other peer is currently in
+        // the process of joining, we will answer his request
+        // else, we'll store his contact information and call him later
 
         if (join_token)
           answer_join_request(emitter, msg->port);
@@ -289,15 +327,15 @@ void Network::handle_incoming_message(const system::error_code& error,
         break;
 
       case MESSAGE_TYPE_JOIN_NOTIF: {
-        // Emitter is the entry point for some peer we don't know yet. 
-        // - add this peer to our view
-        // - send it a join ack so that it knows about us
-        // - add it to joining_peers
-        // - add it to correct position in rings
-
+        
         JoinNotifMessage* msg = dynamic_cast<JoinNotifMessage*>(message);
 
         GroupMap::iterator it = groups.find( msg->group_id );
+
+        // if the group exists, and ( it's ours ) ^ ( the peer is joining
+        // channels now ), acknowledge his join
+        // (if it's our group and the channel flag is on, that means we should
+        //  already know him, so there's nothing to do)
 
         if ( it!=groups.end() && ( (msg->group_id==local_group->get_id())
                                    ^ msg->CHANNEL ) ) { 
@@ -310,29 +348,31 @@ void Network::handle_incoming_message(const system::error_code& error,
           new_peer->init( msg->peer_id, msg->pub_k );
           new_peer->set_state(PEER_STATE_JOINING);
 
-          acknowledge_join(new_peer, it->second);
-
           Peer::Handler listen_handler = bind(&Network::handle_incoming_message, this,
                                               asio::placeholders::error,
                                               asio::placeholders::bytes_transferred,
                                               new_peer);
           new_peer->start_listening(listen_handler);
+
+          acknowledge_join(new_peer, it->second);
         }
-        // TODO: handle case where (group_id == local_group) && (CHANNEL flag is on)
       }
         break;
 
       case MESSAGE_TYPE_JOIN_ACK: {
 
-        // We're joining, group members start making themselves known
-        // - store the emitter in regular peers map
+        // we're joining, group members start making themselves known
+        // store info about this peer, sort him into the group he says
 
         JoinAckMessage* msg = dynamic_cast<JoinAckMessage*>(message);
-        // check whether we're joining/readying, maybe?
         
         shared_ptr<Group> his_group;
         GroupMap::iterator it = groups.find( msg->group_id );
         if (it == groups.end()) {
+          // we don't know this group yet, so let's create it and add all the
+          // members from our groups to the channel rings (don't bother with
+          // update_neighbours, we'll call it when we receive the READY signal)
+
           his_group = create_group( msg->group_id );
 
           if (!local_group)
@@ -362,26 +402,29 @@ void Network::handle_incoming_message(const system::error_code& error,
 
       case MESSAGE_TYPE_READY: {
 
-        // entry point has communicated our status to the group we belong to ;
-        // they all have been sending us JOIN_ACK so that now,
-        // we can compute our position on the rings
-
-        // TODO: according to whether we're JOINING or CONNECTED,
-        // add ourselves to local_group or all channels respectively
+        // members from our group (if we're JOINING) or from all groups (if
+        // we're CONNECTED) have all added us to their view and sent us JOIN
+        // Acknowledgements, so now we can compute our position on the rings
 
         for (GroupMap::iterator it = groups.begin(); it!=groups.end(); it++) {
 
           shared_ptr<Group> group = it->second;
 
+          // if this is not the local group, just add ourselves to the channel
+          // rings 
           if (group->get_id() != local_group->get_id()) {
             group->add_to_rings(local_peer);
             group->update_neighbours(local_peer);
           }
+          // else if this is the local group and we're still JOINING, add
+          // ourself to the group rings
           else if (local_peer->get_state() != PEER_STATE_CONNECTED) {
             local_peer->set_state(PEER_STATE_CONNECTED);
             local_group->add_to_rings(local_peer);
             local_group->update_neighbours(local_peer);
           }
+
+          // send READY Notification to our direct predecessors and successors
           Message* notif = new ReadyNotifMessage();
 
           notif->make_stamp(local_peer->get_id());
@@ -399,15 +442,15 @@ void Network::handle_incoming_message(const system::error_code& error,
           log_message( notif, local_peer );
         
           delete notif;
-
-
         }
       }
         break;
 
       case MESSAGE_TYPE_READY_NOTIF: {
 
-        // emitter is now ready to communicate with us: move to regular peers map
+        // emitter is now ready to be used as relay
+        // his JOIN procedure his finished, let's see whether some other peers
+        // were trying to join
 
         emitter->set_state(PEER_STATE_CONNECTED);
         check_for_new_peers();
@@ -442,6 +485,8 @@ void Network::handle_incoming_message(const system::error_code& error,
 
 void Network::acknowledge_join(shared_ptr<Peer> peer, shared_ptr<Group> group)
 {
+  // add peer to the group, update our neighbours in the relevant rings
+
   peers[ peer->get_id() ] = peer;
 
   if (group->get_id() == local_group->get_id()) {
@@ -462,23 +507,27 @@ void Network::acknowledge_join(shared_ptr<Peer> peer, shared_ptr<Group> group)
     group->update_neighbours(local_peer);
   }
 
-  // - send join ack
-  // - if direct pred/succ, wait for READY before setting state to CONNECTED
-  // - else, wait for 2T before setting to CONNECTED
+  // send a JOIN Acknowledgement so that he knows about us
 
   Message* ack = new JoinAckMessage( local_group->get_id(),
-                                     local_peer->get_id(), local_peer->get_key() );
+                                     local_peer->get_id(),
+                                     local_peer->get_key() );
   send(ack, peer);
   delete ack;
 
   PeerMap preds = group->get_predecessors();
   PeerMap succs = group->get_successors();
 
+  // if the peer has not become a direct neighbour, start a timer until we
+  // consider him ready to act as a relay
+  // (else, wait for the READY Notification)
+  
   if ( preds.find(peer->get_id()) == preds.end()
        && succs.find(peer->get_id()) == succs.end() ) {
 
     shared_ptr<asio::deadline_timer> t
-      (new asio::deadline_timer(*io_service, posix_time::seconds(JOIN_COMPLETE_TIME)));
+      (new asio::deadline_timer(*io_service,
+                                posix_time::seconds(JOIN_COMPLETE_TIME)));
 
     join_timers[ peer->get_id() ] = t;
     t->async_wait( bind(&Network::complete_join, this,
@@ -488,6 +537,9 @@ void Network::acknowledge_join(shared_ptr<Peer> peer, shared_ptr<Group> group)
 
 void Network::print_rings()
 {
+  // display info about the local peer (since he is not sorted in any group),
+  // then go group by group
+
   cout << "This peer: " << local_peer->get_id() << endl;
   GroupMap::iterator g_it;
   for (g_it = groups.begin(); g_it != groups.end(); g_it++) {
@@ -497,7 +549,6 @@ void Network::print_rings()
     cout << ( g_it->second->get_id() == local_group->get_id() ?
               " (LOCAL): " : ": " )
          << endl;
-              
     
     g_it->second->display_rings();
 
@@ -520,6 +571,9 @@ void Network::print_rings()
 
 void Network::print_logs()
 {
+  // display every message in order of emission/reception, whom we received it
+  // from, and how many times
+
   for (LogIndexTime::iterator it=t_logs.begin(); it!=t_logs.end(); it++) {
     Message* m = parse_message( it->message );
     m->display();
@@ -539,31 +593,37 @@ void Network::log_message(Message* message, shared_ptr<Peer> emitter)
   LogIndexHash::iterator it = find_log(message);
   
   if ( it==h_logs.end() ) {
+    // if this is the first time we receives the message, build the structure
+
     MessageLog ml;
     ml.message = message->serialize();
 
-    // make a list of peers we expect to receive this message from
+    // make a list of peers we expect to receive this message from, using
+    // BCAST_MARKER to find in which rings it will be broadcast
 
     if (message->is_broadcast()) {
       BCastMessage* bmsg = dynamic_cast<BCastMessage*>(message);
       string bcast_marker = bmsg->BCAST_MARKER;
 
-      PeerMap preds = groups[ channel_markers[bcast_marker] ]->get_predecessors();
+      PeerMap preds
+        = groups[ channel_markers[bcast_marker] ]->get_predecessors();
       
       for (PeerMap::iterator p=preds.begin(); p!=preds.end(); p++)
         ml.control[ p->second->get_id() ] = 0;
     }
     pair<LogIndexHash::iterator, bool> pair = h_logs.insert( ml );
-    if (pair.second)
+    if (pair.second) // insertion shouldn't fail because of a similar element
       it = pair.first;
   }
             
-  if ( !emitter->is_local() && it!=h_logs.end() )
+  if ( !emitter->is_local() && it!=h_logs.end() ) // only acknowledge reception
+                                                  // if we're not the emitter
+                                                  // (and iterator is valid)
     h_logs.modify(it, ack_message(emitter));
 }
 
 Network::LogIndexHash::iterator Network::find_log(Message* message) {
-
+  // build minimal MessageLog struct to find the corresponding message
   MessageLog ml;
   ml.message = message->serialize();
 
@@ -572,6 +632,8 @@ Network::LogIndexHash::iterator Network::find_log(Message* message) {
 
 shared_ptr<Group> Network::create_group(string id)
 {
+  // create group, add it to the global group list
+
   shared_ptr<Group> new_group
     = shared_ptr<Group>(new Group(id));
 
@@ -583,6 +645,7 @@ shared_ptr<Group> Network::create_group(string id)
 string Network::make_channel_marker(shared_ptr<Group> group1,
                                     shared_ptr<Group> group2)
 {
+  // put "lowest" ID first as a convention
   return ( group1->get_id() < group2->get_id()
            ? make_hash(group1->get_id() + group2->get_id())
            : make_hash(group2->get_id() + group1->get_id()) );

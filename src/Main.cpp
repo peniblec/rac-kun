@@ -18,7 +18,7 @@ int main(int argc, char** argv) {
   init_settings(argc, argv);
 
   // setup an "io_service", ie a Boost.Asio object which will create sockets,
-  // call handlers... on demand
+  // call handlers, start timers... on demand
   shared_ptr<asio::io_service> io_service(new asio::io_service);
   shared_ptr<tcp::resolver> resolver(new tcp::resolver(*io_service));
 

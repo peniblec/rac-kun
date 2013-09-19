@@ -30,6 +30,7 @@ void Peer::start_listening(Peer::Handler _listen_handler)
 
 void Peer::listen()
 {
+  // clear buffer
   memset(last_message, 0, MESSAGE_SIZE);
     
   socket->async_read_some(asio::buffer(last_message),
@@ -40,7 +41,8 @@ void Peer::listen()
 
 void Peer::send(string message)
 {
-  // TODO: if message.size() > MESSAGE_SIZE, store somewhere and send later
+  // TODO: if message.size() > MESSAGE_SIZE, store the rest somewhere and send
+  //       it later
 
   socket->async_write_some(asio::buffer(message),
                            bind(&Peer::finish_write, this,

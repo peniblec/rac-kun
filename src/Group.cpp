@@ -27,8 +27,8 @@ void Group::add_to_rings(shared_ptr<Group> other_group)
 
   for (int i=0; i<RINGS_NB; i++) {
 
-    for (PeerMap::iterator it=other_peers.begin();
-         it!=other_peers.end(); it++) {
+    PeerMap::iterator it;
+    for (it=other_peers.begin(); it!=other_peers.end(); it++) {
 
       rings[i].add_peer(it->second);
     }

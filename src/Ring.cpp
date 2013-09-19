@@ -8,6 +8,7 @@ Ring::Ring(int _index)
 
 string Ring::create_key(string id)
 {
+  // key format: hash( peer ID || ring index )
   string concat = id;
   concat.append(itos(index));
 
@@ -28,9 +29,6 @@ void Ring::remove_peer(shared_ptr<Peer> p)
 
   if ( it!=ring.end() )
     ring.erase(it);
-  // else
-  //   throw PeerNotFoundException();
-  
 }
 
 shared_ptr<Peer> Ring::get_successor(shared_ptr<Peer> p)
@@ -38,9 +36,8 @@ shared_ptr<Peer> Ring::get_successor(shared_ptr<Peer> p)
   PeerMap::iterator it = find_peer(p);
   
   if ( it!= ring.end() && ring.size()>1 ) {
-
-    it++;
-    return ( it != ring.end() ? it->second : ring.begin()->second );
+    // check that it is not the map's last peer
+    return ( ++it != ring.end() ? it->second : ring.begin()->second );
   }
   else 
     throw PeerNotFoundException();
@@ -51,6 +48,7 @@ shared_ptr<Peer> Ring::get_predecessor(shared_ptr<Peer> p)
   PeerMap::iterator it = find_peer(p);
  
   if ( it!= ring.end() && ring.size()>1 )
+    // check that it is not the map's first peer
     return ( it != ring.begin() ? (--it)->second : ring.rbegin()->second );
 
   else 
