@@ -32,13 +32,14 @@ Dependencies:
     - http://sourceforge.net/projects/boost/
 - Crypto++ (5.6.1+)
     - http://www.cryptopp.com/
+
 The program will look for headers in `/usr/include` and for library files in
 `/usr/lib`. These paths may be changed in the *makefile* that you will find in
 the same folder as this readme.
 
 Other requirements:
 - This program was developped on Debian 6.0.7 (squeeze), so it should work on
-  other OSes based on the Linux kernel (from version 2.6.32-5-686)
+  other OSes based on the Linux kernel (from version 2.6.32-5-686 onward)
 - The program assumes that a direct TCP connection may be established between
   two clients, and does not handle any obstruction (NAT, firewall, relay server,
   proxy...)
