@@ -71,7 +71,7 @@ void init_settings(int argc, char** argv)
      "\n- example: any number in [1, 65535]"
      "\n- default: random\n")
     ("entry_point,e", value<string>(),
-     "The pair \"ip/hostname:port\" specifying the entry point to connect to "
+     "The pair \"ip/hostname:port\" specifying the entry point to connect to"
      "\n- example: 127.0.0.1:1764"
      "\n- default: none, will wait for a JOIN command\n")
     ("ui", value<bool>(),
@@ -92,10 +92,17 @@ void init_settings(int argc, char** argv)
 
   variables_map cmd_line_map;
 
-  store(command_line_parser(argc, argv).options(config).positional(pos_options)
-        .run(), cmd_line_map);
-  notify(cmd_line_map);
-
+  try {
+    store(command_line_parser(argc, argv)
+          .options(config).positional(pos_options).run(), cmd_line_map);
+    notify(cmd_line_map);
+  }
+  catch (std::exception& e) {
+    cout << "Failed to parse command arguments:" << endl
+         << "\t" << e.what() << endl;
+    cmd_line_map.clear();
+  }
+  
   if (cmd_line_map.count("help")) {
     // show configuration and commands, then exit
 
@@ -132,17 +139,26 @@ void init_settings(int argc, char** argv)
     notify(conf_file_map);
   }
   catch (std::exception& e) {
-    cout << "Couldn't find configuration file." << endl;
+    cout << "Failed to parse configuration file:" << endl
+         << "\t" << e.what() << endl;
+    conf_file_map.clear();
   }
 
   // find listen port, default to random
-  settings.LISTEN_PORT =
-    ( cmd_line_map.count("listen_port")
-      ? cmd_line_map["listen_port"].as<unsigned short>()
-      : ( conf_file_map.count("listen_port")
-          ? conf_file_map["listen_port"].as<unsigned short>()
-          : 0 ) );
+  try {
+    settings.LISTEN_PORT =
+      ( cmd_line_map.count("listen_port")
+        ? cmd_line_map["listen_port"].as<unsigned short>()
+        : ( conf_file_map.count("listen_port")
+            ? conf_file_map["listen_port"].as<unsigned short>()
+            : 0 ) );
+  }
+  catch (std::exception& e) {
+    cout << "Failed to interpret port from configuration:" << endl
+         << "\t" << e.what() << endl << "\t(defaulting to random)" << endl;
+  }
 
+  
   // find entry point
   // if we can't parse the remote port, set it to 0 to tell the app not to try
   // to connect
@@ -159,8 +175,11 @@ void init_settings(int argc, char** argv)
     
     unsigned short port;
     if ( (istringstream( endpoint.substr(colon+1, endpoint.size()) ) >> port)
-         .fail() )
+         .fail() ) {
       settings.ENTRY_POINT_PORT = 0;
+      cout << "Failed to interpret remote entry point's listening port" << endl
+           << "\t(defaulting to no entry point: use join command)" << endl;
+    }
     else
       settings.ENTRY_POINT_PORT = port;
                         
@@ -169,9 +188,16 @@ void init_settings(int argc, char** argv)
     settings.ENTRY_POINT_PORT = 0;
 
   // find whether user wants UI or not, default to true
-  settings.UI = ( cmd_line_map.count("ui")
-                  ? cmd_line_map["ui"].as<bool>()
-                  : ( conf_file_map.count("ui")
-                      ? conf_file_map["ui"].as<bool>()
-                      : true ) );
+  try {
+    settings.UI = ( cmd_line_map.count("ui")
+                    ? cmd_line_map["ui"].as<bool>()
+                    : ( conf_file_map.count("ui")
+                        ? conf_file_map["ui"].as<bool>()
+                        : true ) );
+  }
+  catch (std::exception& e) {
+
+    cout << "Failed to interpret UI from configuration:" << endl
+         << "\t" << e.what() << endl << "\t" << "(defaulting to true)" << endl;
+  }
 }
