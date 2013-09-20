@@ -32,6 +32,9 @@ Dependencies:
     - http://sourceforge.net/projects/boost/
 - Crypto++ (5.6.1+)
     - http://www.cryptopp.com/
+The program will look for headers in `/usr/include` and for library files in
+`/usr/lib`. These paths may be changed in the *makefile* that you will find in
+the same folder as this readme.
 
 Other requirements:
 - This program was developped on Debian 6.0.7 (squeeze), so it should work on
@@ -40,6 +43,12 @@ Other requirements:
   two clients, and does not handle any obstruction (NAT, firewall, relay server,
   proxy...)
 
+Once the aforementioned libraries have been installed, you can run `make` in the
+same directory as this readme and the program will be compiled into an
+executable file named *node*.
+
+Usage
+--------------------------------------------------------------------------------
 
 
 
