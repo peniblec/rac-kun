@@ -21,15 +21,29 @@ Not implemented:
 - Checking for misbehaviour
 
 
-Requirements
+Installing & Running
 ================================================================================
 
+Installation
+--------------------------------------------------------------------------------
+
 Dependencies:
-- Boost 1.42
-- Crypto++ 5.6.1
+- Boost (1.42+)
+    - http://sourceforge.net/projects/boost/
+- Crypto++ (5.6.1+)
+    - http://www.cryptopp.com/
+
+Other requirements:
+- This program was developped on Debian 6.0.7 (squeeze), so it should work on
+  other OSes based on the Linux kernel (from version 2.6.32-5-686)
+- The program assumes that a direct TCP connection may be established between
+  two clients, and does not handle any obstruction (NAT, firewall, relay server,
+  proxy...)
 
 
-Development notes
+
+
+Development Notes
 ================================================================================
 
 Current feature being implemented: groups and channels
@@ -67,6 +81,7 @@ What's not done:
         the rings 
     4.  the guy from 1. will send READY to *n*
     5.  *n* will only send READY Notifs to members of the other groups
+
 - When the group goes beyond its maximum size, nothing happens. Possible 
   solution:
     1.  after a JOIN procedure is completed, *some node* checks whether the
@@ -78,6 +93,7 @@ What's not done:
     3.  every node computes the ID for the two new groups
         - nodes in the old group compute their new group and channel rings
         - nodes in other groups compute their new channel rings
+
 - When the group goes below its minimum size, nothing happens. Possible
   solution:
     1.  when a member quits, *some node* checks whether the size of group G went
