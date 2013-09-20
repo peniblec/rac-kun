@@ -204,4 +204,5 @@ the LIRIS research lab from CNRS. All complaints about:
 - uncaught exceptions
 - awful inheritance patterns
 - overall ineptness
+
 may be filed at kevin.lg@free.fr.
