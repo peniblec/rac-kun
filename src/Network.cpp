@@ -63,7 +63,18 @@ shared_ptr<Peer> Network::connect_peer(string ip, string port)
   tcp::resolver::iterator endpoint_iterator = resolver->resolve(query);
 
   shared_ptr<tcp::socket> socket(new tcp::socket(*io_service));
-  asio::connect(*socket, endpoint_iterator);
+
+  // for Boost versions up to 1.47
+  tcp::resolver::iterator end;
+  system::error_code error = boost::asio::error::host_not_found;
+  while (error && endpoint_iterator != end) {
+    socket->close();
+    socket->connect(*endpoint_iterator++, error);
+  }
+  if (error)
+    throw system::system_error(error);
+  // for Boost version after 1.48
+  // asio::connect(*socket, endpoint_iterator);
 
   shared_ptr<Peer> new_peer(new Peer(socket));
 
