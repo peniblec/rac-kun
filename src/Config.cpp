@@ -51,7 +51,7 @@ void init_settings(int argc, char** argv)
      "\n- example: any number in [1, 65535]"
      "\n- default: random\n")
     ("entry_point,e", value<string>(),
-     "The pair \"ip/hostname:port\" for the entry point to connect to "
+     "The pair \"ip/hostname:port\" specifying the entry point to connect to "
      "\n- example: 127.0.0.1:1764"
      "\n- default: none, will wait for a JOIN command\n")
     ("ui", value<bool>(),
@@ -94,6 +94,8 @@ void init_settings(int argc, char** argv)
          << "\t\tPrint all the messages received up until now" << endl
          << "\thelp" << endl
          << "\t\tDisplay all available commands" << endl
+         << "\tquit" << endl
+         << "\t\tExit application" << endl
          << endl;
 
     exit(EXIT_SUCCESS);

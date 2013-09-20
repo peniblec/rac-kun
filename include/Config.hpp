@@ -17,6 +17,7 @@ const string COMMAND_RINGS = "rings";
 const string COMMAND_BCAST = "broadcast";
 const string COMMAND_LOGS = "logs";
 const string COMMAND_HELP = "help";
+const string COMMAND_QUIT = "quit";
 
 // peer states, represents the various steps of connection
 enum PeerState {

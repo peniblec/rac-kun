@@ -90,7 +90,15 @@ int main(int argc, char** argv) {
          << "\t\tPrint all the messages received up until now" << endl
          << "\thelp" << endl
          << "\t\tDisplay all available commands" << endl
+         << "\tquit" << endl
+         << "\t\tExit application" << endl
          << endl;
+    }
+    else if ( command.compare(COMMAND_QUIT)==0) {
+
+      io_service->stop();
+      settings.UI = false;
+
     }
     else
       cout << "Invalid command." << endl;
