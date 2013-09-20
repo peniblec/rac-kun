@@ -25,7 +25,7 @@ Requirements
 ================================================================================
 
 Dependencies:
-- Boost 1.49
+- Boost 1.42
 - Crypto++ 5.6.1
 
 
@@ -68,9 +68,30 @@ What's not done:
     4.  the guy from 1. will send READY to *n*
     5.  *n* will only send READY Notifs to members of the other groups
 - When the group goes beyond its maximum size, nothing happens. Possible 
-  solution: (coming)
+  solution:
+    1.  after a JOIN procedure is completed, *some node* checks whether the
+        group size is too high (if the check is made before the procedure ends,
+        only the entry point knows that the group size will get too high, so
+        other nodes have no way to check the entry point's claim that a new node
+        is joining
+    2.  this node broadcasts SPLIT(old group ID) in all channels
+    3.  every node computes the ID for the two new groups
+        - nodes in the old group compute their new group and channel rings
+        - nodes in other groups compute their new channel rings
 - When the group goes below its minimum size, nothing happens. Possible
-  solution: (coming)
+  solution:
+    1.  when a member quits, *some node* checks whether the size of group G went
+        below the minimal size
+    2.  this node broadcasts MERGE(G<sub>old</sub>) in all channels
+    3.  for every node *n* in any group G<sub>n</sub>
+        - compute where every node of G<sub>old</sub> is dispatched (build a
+          list L<sub>G</sub> of the "foster groups" they're joining)
+        - if *n* belongs to G<sub>old</sub>,
+            - compute rings in his new group
+        - else if *n* belongs to a foster group,
+            - compute the new group rings in G<sub>n</sub>
+        - compute new channel rings between G<sub>n</sub> and any group in
+          L<sub>G</sub>
 
 
 Credits

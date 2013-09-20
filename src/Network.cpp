@@ -73,7 +73,7 @@ shared_ptr<Peer> Network::connect_peer(string ip, string port)
   }
   if (error)
     throw system::system_error(error);
-  // for Boost version after 1.48
+  // shorter call for Boost version after 1.48
   // asio::connect(*socket, endpoint_iterator);
 
   shared_ptr<Peer> new_peer(new Peer(socket));
