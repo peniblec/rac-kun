@@ -88,7 +88,11 @@ int main(int argc, char** argv) {
     }
     else if ( command.compare(COMMAND_BCAST)==0 ) {
 
-      network->broadcast_data(argument);
+      if (local_peer->get_state() != PEER_STATE_CONNECTED)
+        cout << "Cannot broadcast while "
+             << PeerStateNames[local_peer->get_state()] << endl;
+      else
+        network->broadcast_data(argument);
     }
     else if ( command.compare(COMMAND_LOGS)==0 ) {
 
