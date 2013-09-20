@@ -1,8 +1,7 @@
 RAC-kun - junior version of RAC
 
 
-Overview
-================================================================================
+# Overview 
 
 This is a prototype for RAC, a freerider-resilient, scalable, anonymous
 communication protocol conceived by researchers from CNRS and LIG.
@@ -12,11 +11,10 @@ messages, sorting the participants in ring-like structures to broadcast the
 information. The program also keeps track of those messages.
 
 
-Installing & Running
-================================================================================
+# Installing & Running
 
-Installation
---------------------------------------------------------------------------------
+## Installation
+
 Dependencies:
 - Boost (1.42+)
     - http://sourceforge.net/projects/boost/
@@ -38,8 +36,10 @@ Once the aforementioned libraries have been installed, you can run `make` in the
 same directory as this readme and the program will be compiled into an
 executable file named *node*.
 
-Usage
---------------------------------------------------------------------------------
+## Usage
+
+### Launching
+
 Before running the program, you may write a configuration file in which you can
 specify:
 - the port the application will use to listen for incoming connections:
@@ -47,6 +47,7 @@ specify:
 - an entry point the program should try to connect upon launch: `entry_point = 
   {hostname or IP address}:{the entry point's listening port}`
 - whether or not to use a user interface: `ui = true` or `false`
+
 By default, the program will listen on a random port among those available at
 the time of launch, will not try to connect to a remote endpoint, and will
 present a user interface.
@@ -61,17 +62,42 @@ configuration file, the syntax being `--{setting}={value}` or `--{setting}
 Running the program with `--help` will give you an overview of the various
 settings, and will also list the command for the user interface.
 
+### Commands
+
+If no endpoint is specified at launch, the program will wait idly until the user
+enters a command, eg `join` followed by an endpoint described as `{hostname or
+IP address}:{port}`.
+
+When a connection has been successfully established (either by joining, or by
+having a remote peer joining us), messages can be exchanged with the `broadcast`
+command, followed by the data you want to send. Every peer will receive your
+message, and keep track of who in the structure was in charge to forward it to
+them.
+
+The messages you have sent and received can be consulted with the `logs`
+command, which shows (in order of reception) for each message exchanged
+(including protocol messages) whom you received it from (a blank indicates that
+this was a one-time signal emitted by the local node).
+
+Note that for each message that you sent with `broadcast`, you receive a copy
+from a subset of the other peers: this is because of the protocol's ring
+structure, which in addition to allowing messages to be diffused among all
+members, lets each node check whether its predecessors did their job and
+forwarded the message.
+
+To see this structure, you can use the `rings` command to see, for each group
+(see Development Notes for more on the concept of groups), the different rings
+composing it, and a recap of your predecessors and successors.
 
 
-Development Notes
-================================================================================
+# Development Notes
 
-Features Checklist
---------------------------------------------------------------------------------
+##Features Checklist
+
 Implemented features:
 - Join procedure
 - Ring structure
-- Basic logs
+- Logs
 
 Implementing:
 - Groups and channels
@@ -83,11 +109,11 @@ Not implemented:
 - Checking for misbehaviour
 - A real CLI
 
-Current Progress
---------------------------------------------------------------------------------
+## Current Progress
+
 Currently being implemented: groups and channels
 
-What's done:
+### What's done:
 - The notions of group and channel exist
 - *Network* has a list of groups sorted by ID
 - JOIN Notification (resp. Acknowledgements) features a *group_id* field, which
@@ -108,7 +134,7 @@ What's done:
       Notif to G<sub>n</sub>, and we don't want members of G<sub>e</sub> to send
       JOIN Acknowledgements yet; hence the *CHANNEL* flag
 
-What's not done:
+### What's not done:
 - When the new node has finished joining its group, it does not initiate any
   procedure to join the surrounding channels (and discover the other groups out
   there). Possible solution: (2, 3 and 5 are already implemented)
@@ -149,8 +175,7 @@ What's not done:
           L<sub>G</sub>
 
 
-Credits
-================================================================================
+# Credits
 
 RAC stems from the work of the following people:
 
