@@ -19,6 +19,7 @@ Not implemented:
 - ID computation
 - Onion routing
 - Checking for misbehaviour
+- A real CLI
 
 
 Installing & Running
