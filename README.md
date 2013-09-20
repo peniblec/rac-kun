@@ -95,7 +95,7 @@ Some other commands:
 - `send` (followed by some text) sends the text to all peers at once, bypassing
   the rings.
 - `help` will display the list of available commands
-- `quit` will exit the application (if `ui` has been set to false, the
+- `quit` will exit the application (if the user interface is disabled, the
   application can still be shut down by sending SIGINT (generally by pressing
   the `ctrl` `C` keys), or other such signals)
 
