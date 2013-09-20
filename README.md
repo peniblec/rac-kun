@@ -53,7 +53,9 @@ the time of launch, will not try to connect to a remote endpoint, and will
 present a user interface.
 
 To use this configuration file, run the program as such: `./node
---config_file={path to the file}` or simply `./node {path to file}`
+--config_file={path to the file}` or simply `./node {path to file}`. By default,
+the program will try to look for a file named `rac.conf` in the directory it was
+called from.
 
 You may also use command line arguments to override any setting defined in the
 configuration file, the syntax being `--{setting}={value}` or `--{setting}
