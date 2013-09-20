@@ -89,6 +89,14 @@ To see this structure, you can use the `rings` command to see, for each group
 (see Development Notes for more on the concept of groups), the different rings
 composing it, and a recap of your predecessors and successors.
 
+Some other commands:
+- `send` (followed by some text) sends the text to all peers at once, bypassing
+  the rings.
+- `help` will display the list of available commands
+- `quit` will exit the application (if `ui` has been set to false, the
+  application can still be shut down by sending SIGINT (generally by pressing
+  the `Control` `C` keys), SIGTERM or SIGKILL
+
 
 # Development Notes
 
