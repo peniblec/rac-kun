@@ -7,19 +7,9 @@ Overview
 This is a prototype for RAC, a freerider-resilient, scalable, anonymous
 communication protocol conceived by researchers from CNRS and LIG.
 
-Implemented features:
-- Join procedure
-- Ring structure
-
-Implementing:
-- Groups and channels
-
-Not implemented:
-- ID and pseudonym key pairs
-- ID computation
-- Onion routing
-- Checking for misbehaviour
-- A real CLI
+In its current state, RAC-kun allows a set of nodes to connect and exchange
+messages, sorting the participants in ring-like structures to broadcast the
+information. The program also keeps track of those messages.
 
 
 Installing & Running
@@ -27,7 +17,6 @@ Installing & Running
 
 Installation
 --------------------------------------------------------------------------------
-
 Dependencies:
 - Boost (1.42+)
     - http://sourceforge.net/projects/boost/
@@ -51,13 +40,52 @@ executable file named *node*.
 
 Usage
 --------------------------------------------------------------------------------
+Before running the program, you may write a configuration file in which you can
+specify:
+- the port the application will use to listen for incoming connections:
+  `listen_port = {anything between 1 and 65535}`
+- an entry point the program should try to connect upon launch: `entry_point = 
+  {hostname or IP address}:{the entry point's listening port}`
+- whether or not to use a user interface: `ui = true` or `false`
+By default, the program will listen on a random port among those available at
+the time of launch, will not try to connect to a remote endpoint, and will
+present a user interface.
+
+To use this configuration file, run the program as such: `./node
+--config_file={path to the file}` or simply `./node {path to file}`
+
+You may also use command line arguments to override any setting defined in the
+configuration file, the syntax being `--{setting}={value}` or `--{setting}
+{value}`.
+
+Running the program with `--help` will give you an overview of the various
+settings, and will also list the command for the user interface.
 
 
 
 Development Notes
 ================================================================================
 
-Current feature being implemented: groups and channels
+Features Checklist
+--------------------------------------------------------------------------------
+Implemented features:
+- Join procedure
+- Ring structure
+- Basic logs
+
+Implementing:
+- Groups and channels
+
+Not implemented:
+- ID and pseudonym key pairs
+- ID computation
+- Onion routing
+- Checking for misbehaviour
+- A real CLI
+
+Current Progress
+--------------------------------------------------------------------------------
+Currently being implemented: groups and channels
 
 What's done:
 - The notions of group and channel exist
