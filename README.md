@@ -192,3 +192,14 @@ RAC stems from the work of the following people:
 - Amadou Diarra (Grenoble University)
 - Vivien Quéma (Grenoble INP)
 - Ali Shoker (CNRS)
+
+## Implementation
+
+This skeletal implementation was undertaken by a ragtag band of barely-competent
+developpers composed of me, myself and I, during my internship with team DRIM in
+the LIRIS research lab from CNRS. All complaints about:
+- memory leaks
+- uncaught exceptions
+- awful inheritance patterns
+- overall ineptness
+may be filed at kevin.lg@free.fr.
