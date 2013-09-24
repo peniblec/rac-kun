@@ -16,7 +16,7 @@ EXE=node
 
 
 $(EXE): $(OBJ)
-	g++ -o $(EXE) $(LIBS) $(OBJ)
+	g++ -o $(EXE) $(OBJ) $(LIBS)
 
 Main.o : $(SRC)/Main.cpp $(INC)/Config.hpp
 Config.o : $(SRC)/Config.cpp $(INC)/Config.hpp
@@ -37,7 +37,7 @@ Utils.o : $(SRC)/Utils.cpp $(INC)/Utils.hpp $(INC)/Config.hpp
 
 
 %.o : $(SRC)/%.cpp
-	g++ -c $(CCFLAGS) $(INCLUDE) $<
+	g++ -c $(CCFLAGS) $< $(INCLUDE)
 
 clean :
 	$(RM) $(OBJ) $(EXE)
